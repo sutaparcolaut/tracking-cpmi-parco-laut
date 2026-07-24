@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PT Parco Laut - Sistem Internal</title>
+<style>
+  :root {
+    --navy-900: #163a5c; --navy-800: #1f5c96; --blue-700: #3382c9; --blue-600: #52a3e0;
+    --blue-100: #eaf6fe; --blue-50: #f7fbfe; --gold: #c9a769; --gold-soft: #f2e6cc;
+    --border: #dfebf6; --text: #1c334a; --muted: #6a8099;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(160deg, var(--navy-900), var(--navy-800) 60%, var(--blue-700));
+    padding: 24px;
+  }
+  .wrap { width: 100%; max-width: 420px; text-align: center; }
+  .wrap img { width: 68px; height: 68px; border-radius: 50%; box-shadow: 0 0 0 4px rgba(255,255,255,.25); margin-bottom: 14px; }
+  .wrap h1 { color: #fff; font-size: 17px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .02em; }
+  .wrap p.sub { color: #bcd6ee; font-size: 12.5px; margin: 0 0 26px; }
+  .menu-card {
+    display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 16px;
+    padding: 16px 18px; text-decoration: none; margin-bottom: 14px; text-align: left;
+    box-shadow: 0 18px 40px -16px rgba(6,20,36,.4); border-top: 3px solid var(--gold);
+    transition: transform .15s;
+  }
+  .menu-card:active { transform: scale(.98); }
+  .menu-card .icon {
+    width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    background: var(--blue-100); color: var(--blue-700); flex-shrink: 0;
+  }
+  .menu-card .icon svg { width: 22px; height: 22px; }
+  .menu-card .label { font-weight: 700; color: var(--navy-900); font-size: 14.5px; }
+  .menu-card .desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .footer-note { color: #9fc6e8; font-size: 10.5px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img src="icon-192.png" alt="Logo PT Parco Laut" />
+  <h1>PT Parco Laut</h1>
+  <p class="sub">Sistem Internal &middot; Cabang Indramayu</p>
+
+  <a class="menu-card" href="2_tracking_cpmi.html">
+    <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="4" x2="8" y2="10"/></svg></div>
+    <div>
+      <div class="label">Tracking CPMI</div>
+      <div class="desc">Data lengkap, dashboard & laporan</div>
+    </div>
+  </a>
+
+  <a class="menu-card" href="4_update_cepat.html">
+    <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+    <div>
+      <div class="label">Update Cepat</div>
+      <div class="desc">Ketik singkat, langsung update data</div>
+    </div>
+  </a>
+
+  <div class="footer-note">Pilih salah satu untuk membuka</div>
+</div>
+</body>
+</html>
