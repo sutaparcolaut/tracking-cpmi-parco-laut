@@ -90,6 +90,16 @@
   }
   input:focus, select:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px var(--blue-100); }
 
+  /* Perbaikan bug umum di HP (terutama iPhone/Safari): teks di kolom login
+     kadang jadi tak terlihat (transparan) saat browser mendeteksi autofill. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text) !important;
+    -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+    caret-color: var(--text);
+  }
+
   button {
     padding: 9px 16px; border: 1px solid var(--border); border-radius: 9px;
     background: #fff; cursor: pointer; font-size: 13px; font-weight: 600;
@@ -196,7 +206,7 @@
   .login-field svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: .5; pointer-events: none; }
   .login-card input {
     width: 100%; font-size: 12px; padding: 8px 10px 8px 30px; box-sizing: border-box;
-    background: rgba(255,255,255,.85);
+    background: rgba(255,255,255,.85); color: var(--text);
   }
   .login-card button.primary { width: 100%; padding: 9px; font-size: 12.5px; margin-top: 4px; }
   .login-footer { margin-top: 12px; font-size: 9.5px; color: var(--muted); }
@@ -408,9 +418,9 @@
 <table>
   <thead>
     <tr>
-      <th>No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Alamat</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
-      <th>Daftar</th><th class="col-extra">Izin</th><th class="col-extra">Grup Majikan</th><th>Sales</th><th>MCU</th><th>Rekom ID</th>
-      <th>Status</th><th>Tanggal EC</th><th></th>
+      <th>No.</th><th class="col-extra">No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Tanggal Lahir</th><th class="col-extra">Alamat</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
+      <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Hasil Medical</th><th class="col-extra">Ket. Medical</th><th>Rekom ID</th>
+      <th>Status</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th>Tanggal EC</th><th></th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
@@ -448,6 +458,7 @@
 
     <label>Nomor Register</label><input id="f_noreg" type="text" />
     <label>Nama CPMI</label><input id="f_nama" type="text" />
+    <label>Tanggal Lahir</label><input id="f_tgllahir" type="date" />
     <label>Alamat</label><input id="f_alamat" type="text" />
     <label>Kabupaten</label>
     <select id="f_kabupaten">
@@ -465,8 +476,6 @@
     <label>Nomor telepon</label><input id="f_telp" type="text" />
     <label>Password SISKOP2MI</label><input id="f_pass" type="text" />
     <label>Tanggal daftar</label><input id="f_daftar" type="date" />
-    <label>Tgl penyerahan surat izin</label><input id="f_izin" type="date" />
-    <label>Tgl masuk grup cari majikan</label><input id="f_grup" type="date" />
     <label>Sales</label>
     <select id="f_sales">
       <option value="">- Pilih Sales -</option>
@@ -478,7 +487,25 @@
       <option value="Fanny">Fanny</option>
       <option value="Fair">Fair</option>
     </select>
+    <label>Status Majikan</label>
+    <select id="f_statusmajikan">
+      <option value="">- Pilih Status Majikan -</option>
+      <option value="Bawa Majikan">Bawa Majikan</option>
+      <option value="Dicarikan Majikan">Dicarikan Majikan</option>
+    </select>
+    <label>Tanggal TTD Majikan</label><input id="f_ttdmajikan" type="date" />
     <label>Tanggal MCU</label><input id="f_mcu" type="date" />
+    <label>Hasil Medical</label>
+    <select id="f_hasilmedical">
+      <option value="">- Belum Ada Hasil -</option>
+      <option value="Fit">Fit</option>
+      <option value="Pending">Pending</option>
+      <option value="Unfit">Unfit</option>
+    </select>
+    <div id="ketMedicalWrap" style="display:none;">
+      <label>Keterangan Hasil Medical (kenapa Pending/Unfit)</label>
+      <input id="f_ketmedical" type="text" />
+    </div>
     <label>Tanggal rekom ID</label><input id="f_rekom" type="date" />
     <label>Status proses</label>
     <select id="f_status">
@@ -486,6 +513,9 @@
       <option value="selesai">Proses selesai</option>
       <option value="batal">Batal / mundur</option>
     </select>
+    <label>Tanggal OPP</label><input id="f_opp" type="date" />
+    <label>Tanggal Terbang</label><input id="f_terbang" type="date" />
+    <label>Catatan Selama Penempatan</label><input id="f_catatan" type="text" />
     <label>Tanggal EC</label><input id="f_ec" type="date" />
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
       <button id="cancelBtn">Batal</button>
@@ -521,6 +551,18 @@ function statusBadge(status) {
     batal: { cls: 'status-batal', label: 'Batal' }
   };
   const s = map[status] || map.berjalan;
+  return `<span class="badge ${s.cls}">${s.label}</span>`;
+}
+
+function medicalBadge(hasil) {
+  if (!hasil) return '-';
+  const map = {
+    Fit: { cls: 'status-selesai', label: 'Fit' },
+    Pending: { cls: 'status-berjalan', label: 'Pending' },
+    Unfit: { cls: 'status-batal', label: 'Unfit' }
+  };
+  const s = map[hasil];
+  if (!s) return hasil;
   return `<span class="badge ${s.cls}">${s.label}</span>`;
 }
 
@@ -652,26 +694,33 @@ function render() {
   const pageItems = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
   if (filtered.length === 0) {
-    body.innerHTML = '<tr><td colspan="16" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
+    body.innerHTML = '<tr><td colspan="23" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
   } else {
-    body.innerHTML = pageItems.map(r => {
+    body.innerHTML = pageItems.map((r, i) => {
       const alert = isMcuOverdue(r) || isEcOverdue(r);
       return `
       <tr class="${alert ? 'row-alert' : ''}">
-        <td>${r.noreg || '-'}</td>
+        <td>${startIdx + i + 1}</td>
+        <td class="col-extra">${r.noreg || '-'}</td>
         <td class="col-nama"><strong>${r.nama}</strong></td>
+        <td class="col-extra">${fmtDate(r.tgllahir)}</td>
         <td class="col-extra">${r.alamat || '-'}</td>
         <td class="col-extra">${r.kabupaten || '-'}</td>
         <td class="col-extra">${r.keterangan || '-'}</td>
         <td class="col-extra">${r.email || '-'}<br/>${r.telp || '-'}</td>
         <td class="col-extra" style="font-family:monospace; font-size:12px;">${r.pass || '-'}</td>
         <td>${fmtDate(r.daftar)}<br/><button onclick="printSuratPengantar('${r.id}')" style="margin-top:4px;">Cetak Surat</button></td>
-        <td class="col-extra">${fmtDate(r.izin)}</td>
-        <td class="col-extra">${fmtDate(r.grup)}</td>
         <td>${r.sales || '-'}</td>
+        <td>${r.statusmajikan || '-'}</td>
+        <td class="col-extra">${fmtDate(r.ttdmajikan)}</td>
         <td>${fmtDate(r.mcu)}</td>
+        <td>${medicalBadge(r.hasilmedical)}</td>
+        <td class="col-extra">${r.ketmedical || '-'}</td>
         <td>${fmtDate(r.rekom)}</td>
         <td>${statusBadge(r.status)}</td>
+        <td class="col-extra">${fmtDate(r.opp)}</td>
+        <td class="col-extra">${fmtDate(r.terbang)}</td>
+        <td class="col-extra">${r.catatan || '-'}</td>
         <td>${fmtDate(r.ec)}</td>
         <td class="actions">
           <button onclick="editRecord('${r.id}')">Edit</button>
@@ -705,6 +754,7 @@ function openModal(record) {
   document.getElementById('modalTitle').textContent = record ? 'Edit CPMI' : 'Tambah CPMI';
   document.getElementById('f_noreg').value = record ? record.noreg : '';
   document.getElementById('f_nama').value = record ? record.nama : '';
+  document.getElementById('f_tgllahir').value = record ? record.tgllahir : '';
   document.getElementById('f_alamat').value = record ? record.alamat : '';
   document.getElementById('f_kabupaten').value = record ? record.kabupaten : '';
   document.getElementById('f_keterangan').value = record ? record.keterangan : '';
@@ -712,12 +762,19 @@ function openModal(record) {
   document.getElementById('f_telp').value = record ? record.telp : '';
   document.getElementById('f_pass').value = record ? record.pass : '';
   document.getElementById('f_daftar').value = record ? record.daftar : '';
-  document.getElementById('f_izin').value = record ? record.izin : '';
-  document.getElementById('f_grup').value = record ? record.grup : '';
   document.getElementById('f_sales').value = record ? record.sales : '';
+  document.getElementById('f_statusmajikan').value = record ? record.statusmajikan : '';
+  document.getElementById('f_ttdmajikan').value = record ? record.ttdmajikan : '';
   document.getElementById('f_mcu').value = record ? record.mcu : '';
+  document.getElementById('f_hasilmedical').value = record ? record.hasilmedical : '';
+  document.getElementById('f_ketmedical').value = record ? record.ketmedical : '';
+  document.getElementById('ketMedicalWrap').style.display =
+    (record && (record.hasilmedical === 'Pending' || record.hasilmedical === 'Unfit')) ? 'block' : 'none';
   document.getElementById('f_rekom').value = record ? record.rekom : '';
   document.getElementById('f_status').value = record ? record.status : 'berjalan';
+  document.getElementById('f_opp').value = record ? record.opp : '';
+  document.getElementById('f_terbang').value = record ? record.terbang : '';
+  document.getElementById('f_catatan').value = record ? record.catatan : '';
   document.getElementById('f_ec').value = record ? record.ec : '';
   document.getElementById('modalOverlay').style.display = 'flex';
 }
@@ -879,6 +936,11 @@ window.printSuratPengantar = function(id) {
 
 document.getElementById('addBtn').addEventListener('click', () => openModal(null));
 
+document.getElementById('f_hasilmedical').addEventListener('change', (e) => {
+  const wrap = document.getElementById('ketMedicalWrap');
+  wrap.style.display = (e.target.value === 'Pending' || e.target.value === 'Unfit') ? 'block' : 'none';
+});
+
 document.getElementById('compactToggleBtn').addEventListener('click', () => {
   const tableWrap = document.querySelector('.table-wrap');
   const isCompact = tableWrap.classList.toggle('compact-mode');
@@ -907,6 +969,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     id: editingId || ('id_' + Date.now()),
     noreg: document.getElementById('f_noreg').value.trim(),
     nama,
+    tgllahir: document.getElementById('f_tgllahir').value,
     alamat: document.getElementById('f_alamat').value.trim(),
     kabupaten: document.getElementById('f_kabupaten').value,
     keterangan: document.getElementById('f_keterangan').value.trim(),
@@ -914,12 +977,17 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     telp: document.getElementById('f_telp').value.trim(),
     pass: document.getElementById('f_pass').value.trim(),
     daftar: document.getElementById('f_daftar').value,
-    izin: document.getElementById('f_izin').value,
-    grup: document.getElementById('f_grup').value,
     sales: document.getElementById('f_sales').value,
+    statusmajikan: document.getElementById('f_statusmajikan').value,
+    ttdmajikan: document.getElementById('f_ttdmajikan').value,
     mcu: document.getElementById('f_mcu').value,
+    hasilmedical: document.getElementById('f_hasilmedical').value,
+    ketmedical: document.getElementById('f_ketmedical').value.trim(),
     rekom: document.getElementById('f_rekom').value,
     status: newStatus,
+    opp: document.getElementById('f_opp').value,
+    terbang: document.getElementById('f_terbang').value,
+    catatan: document.getElementById('f_catatan').value.trim(),
     ec: document.getElementById('f_ec').value,
     selesaiDate
   };
