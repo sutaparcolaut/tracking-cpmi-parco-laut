@@ -127,12 +127,12 @@
     overflow-x: auto; border-radius: 16px; background: var(--card);
     border: 1px solid var(--border); box-shadow: var(--shadow);
   }
-  table { width: 100%; min-width: 1250px; border-collapse: collapse; font-size: 12.5px; }
-  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  table { width: 100%; min-width: 1250px; border-collapse: collapse; font-size: 11px; }
+  th, td { padding: 4px 8px; text-align: left; border-bottom: 1px solid var(--border); line-height: 1.35; }
   th {
-    background: linear-gradient(180deg, var(--blue-100), var(--blue-50)); color: var(--navy-900); font-weight: 700; font-size: 11px;
-    letter-spacing: .03em; text-transform: uppercase; position: sticky; top: 0;
-    padding: 9px 10px; border-bottom: 2px solid var(--gold);
+    background: linear-gradient(180deg, var(--blue-100), var(--blue-50)); color: var(--navy-900); font-weight: 700; font-size: 9.5px;
+    letter-spacing: .02em; text-transform: uppercase; position: sticky; top: 0;
+    padding: 7px 8px; border-bottom: 2px solid var(--gold);
   }
   tbody tr { transition: background .12s; }
   tbody tr:hover { background: var(--blue-50); }
@@ -156,10 +156,10 @@
   .compact-mode table { min-width: 0; width: 100%; }
 
   .badge {
-    padding: 4px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 600; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px;
   }
-  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
   .status-berjalan { background: var(--warn-bg); color: var(--warn-text); }
   .status-berjalan::before { background: var(--warn-dot); }
   .status-selesai { background: var(--ok-bg); color: var(--ok-text); }
@@ -167,7 +167,7 @@
   .status-batal { background: var(--bad-bg); color: var(--bad-text); }
   .status-batal::before { background: var(--bad-dot); }
 
-  .actions button { padding: 5px 10px; margin-right: 4px; font-weight: 500; font-size: 12px; }
+  .actions button { padding: 4px 8px; margin-right: 3px; font-weight: 500; font-size: 10.5px; }
 
   #statusMsg { font-size: 12px; color: var(--muted); margin: 2px 0 12px; padding-left: 2px; }
 
@@ -419,8 +419,8 @@
   <thead>
     <tr>
       <th>No.</th><th class="col-extra">No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Tanggal Lahir</th><th class="col-extra">Alamat</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
-      <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Hasil Medical</th><th class="col-extra">Ket. Medical</th><th>Rekom ID</th>
-      <th>Status</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th>Tanggal EC</th><th></th>
+      <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Medical</th><th>Rekom ID</th>
+      <th>Status</th><th>Tanggal EC</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th></th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
@@ -566,6 +566,19 @@ function medicalBadge(hasil) {
   return `<span class="badge ${s.cls}">${s.label}</span>`;
 }
 
+// Gabungan Hasil Medical + Keterangan dalam 1 kolom.
+// Kalau Pending/Unfit dan ada keterangan, badge bisa diklik untuk lihat alasan lewat pop-up.
+function medicalCell(r) {
+  if (!r.hasilmedical) return '-';
+  const badge = medicalBadge(r.hasilmedical);
+  const perluKeterangan = (r.hasilmedical === 'Pending' || r.hasilmedical === 'Unfit');
+  if (perluKeterangan && r.ketmedical) {
+    const escaped = r.ketmedical.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<span onclick="alert('Keterangan ${r.hasilmedical}: ${escaped}')" style="cursor:pointer;" title="Klik untuk lihat keterangan">${badge} ℹ️</span>`;
+  }
+  return badge;
+}
+
 function daysSince(dateStr) {
   if (!dateStr) return null;
   const then = new Date(dateStr + 'T00:00:00');
@@ -694,7 +707,7 @@ function render() {
   const pageItems = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
   if (filtered.length === 0) {
-    body.innerHTML = '<tr><td colspan="23" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
+    body.innerHTML = '<tr><td colspan="22" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
   } else {
     body.innerHTML = pageItems.map((r, i) => {
       const alert = isMcuOverdue(r) || isEcOverdue(r);
@@ -708,20 +721,19 @@ function render() {
         <td class="col-extra">${r.kabupaten || '-'}</td>
         <td class="col-extra">${r.keterangan || '-'}</td>
         <td class="col-extra">${r.email || '-'}<br/>${r.telp || '-'}</td>
-        <td class="col-extra" style="font-family:monospace; font-size:12px;">${r.pass || '-'}</td>
-        <td>${fmtDate(r.daftar)}<br/><button onclick="printSuratPengantar('${r.id}')" style="margin-top:4px;">Cetak Surat</button></td>
+        <td class="col-extra" style="font-family:monospace; font-size:10px;">${r.pass || '-'}</td>
+        <td>${fmtDate(r.daftar)}<br/><button onclick="printSuratPengantar('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">Cetak Surat</button></td>
         <td>${r.sales || '-'}</td>
         <td>${r.statusmajikan || '-'}</td>
         <td class="col-extra">${fmtDate(r.ttdmajikan)}</td>
         <td>${fmtDate(r.mcu)}</td>
-        <td>${medicalBadge(r.hasilmedical)}</td>
-        <td class="col-extra">${r.ketmedical || '-'}</td>
+        <td>${medicalCell(r)}</td>
         <td>${fmtDate(r.rekom)}</td>
         <td>${statusBadge(r.status)}</td>
+        <td>${fmtDate(r.ec)}</td>
         <td class="col-extra">${fmtDate(r.opp)}</td>
         <td class="col-extra">${fmtDate(r.terbang)}</td>
         <td class="col-extra">${r.catatan || '-'}</td>
-        <td>${fmtDate(r.ec)}</td>
         <td class="actions">
           <button onclick="editRecord('${r.id}')">Edit</button>
           <button onclick="kirimWaManual('${r.id}')">Kirim WA</button>
