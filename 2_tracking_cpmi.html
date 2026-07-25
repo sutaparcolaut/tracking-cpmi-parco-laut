@@ -489,6 +489,7 @@
       <option value="Julie">Julie</option>
       <option value="Fanny">Fanny</option>
       <option value="Fair">Fair</option>
+      <option value="Pinkcollar">Pinkcollar</option>
     </select>
     <label>Status Majikan</label>
     <select id="f_statusmajikan">
@@ -739,7 +740,7 @@ function render() {
         <td>${fmtDate(r.mcu)}</td>
         <td>${medicalCell(r)}</td>
         <td>${fmtDate(r.rekom)}</td>
-        <td>${statusBadge(r.status)}</td>
+        <td>${statusBadge(r.status)}${r.status === 'selesai' ? `<br/><button onclick="kirimWaSales('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">📞 Hubungi Sales</button>` : ''}</td>
         <td>${fmtDate(r.ec)}</td>
         <td class="col-extra">${fmtDate(r.opp)}</td>
         <td class="col-extra">${fmtDate(r.terbang)}</td>
@@ -826,6 +827,38 @@ function formatNomorWa(telp) {
   else if (!digits.startsWith('62')) digits = '62' + digits;
   return digits;
 }
+
+// ===== Nomor WA tiap Sales =====
+// GANTI nomor di bawah ini dengan nomor WA masing-masing Sales (format apa saja boleh,
+// misal 08xxxx atau 62xxxx, sistem akan merapikan otomatis). Kosongkan '' kalau belum tahu nomornya.
+const SALES_PHONE = {
+  'Wiwin': '+85253467338',
+  'Isya': '+85294315369',
+  'Ann': '+85268903270',
+  'Maylo': '+85293282509',
+  'Julie': '+85291691755',
+  'Fanny': '+85297819529',
+  'Fair': '+85259605575',
+  'Pinkcollar': '+601115783685'
+};
+
+window.kirimWaSales = function(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  if (!r.sales) {
+    alert('Data ini belum ada nama Sales-nya, silakan isi dulu lewat Edit.');
+    return;
+  }
+  const nomorAsli = SALES_PHONE[r.sales];
+  const nomor = formatNomorWa(nomorAsli);
+  if (!nomor) {
+    alert(`Nomor WA untuk Sales "${r.sales}" belum diatur. Tolong isi dulu di bagian SALES_PHONE pada kode (dekat awal script), lalu upload ulang.`);
+    return;
+  }
+  const pesan = `Halo ${r.sales}, proses CPMI atas nama ${r.nama} sudah SELESAI di PT Parco Laut Cabang Indramayu. Mohon ditindaklanjuti untuk proses kontrak kerja. Terima kasih.`;
+  const url = `https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`;
+  window.open(url, '_blank');
+};
 
 function kirimWaRekomSelesai(r) {
   const nomor = formatNomorWa(r.telp);
