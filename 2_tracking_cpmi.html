@@ -818,19 +818,21 @@ window.deleteRecord = async function(id) {
 };
 
 // ===== Kirim WA (semi-otomatis lewat wa.me) =====
-// Merapikan nomor telepon Indonesia jadi format yang dikenali wa.me (62xxxxxxxxxx)
+// Merapikan nomor telepon jadi format yang dikenali wa.me.
+// Kalau nomor diawali angka 0 (format lokal Indonesia, mis. 0812xxxx), diganti jadi 62812xxxx.
+// Kalau tidak diawali 0 (berarti sudah pakai kode negaranya sendiri, misal 852xxxx untuk
+// Hong Kong atau 60xxxx untuk Malaysia), nomor dipakai apa adanya TANPA ditambah kode Indonesia.
 function formatNomorWa(telp) {
   if (!telp) return null;
   let digits = telp.replace(/[^0-9]/g, '');
-  if (digits.startsWith('0')) digits = '62' + digits.slice(1);
-  else if (digits.startsWith('8')) digits = '62' + digits;
-  else if (!digits.startsWith('62')) digits = '62' + digits;
+  if (!digits) return null;
+  if (digits.startsWith('0')) {
+    digits = '62' + digits.slice(1);
+  }
   return digits;
 }
 
 // ===== Nomor WA tiap Sales =====
-// GANTI nomor di bawah ini dengan nomor WA masing-masing Sales (format apa saja boleh,
-// misal 08xxxx atau 62xxxx, sistem akan merapikan otomatis). Kosongkan '' kalau belum tahu nomornya.
 const SALES_PHONE = {
   'Wiwin': '+85253467338',
   'Isya': '+85294315369',
@@ -855,7 +857,7 @@ window.kirimWaSales = function(id) {
     alert(`Nomor WA untuk Sales "${r.sales}" belum diatur. Tolong isi dulu di bagian SALES_PHONE pada kode (dekat awal script), lalu upload ulang.`);
     return;
   }
-  const pesan = `Halo ${r.sales}, proses CPMI atas nama ${r.nama} sudah SELESAI di PT Parco Laut Cabang Indramayu. Mohon ditindaklanjuti untuk proses kontrak kerja. Terima kasih.`;
+  const pesan = `Hello, we are PT Parco Laut Branch Indramayu.\nWe would like to inform you that ${r.nama} has successfully completed all the required procedures and is now ready to be included in the employment contract.\nPlease proceed with the next process at your earliest convenience. Thank you.`;
   const url = `https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`;
   window.open(url, '_blank');
 };
