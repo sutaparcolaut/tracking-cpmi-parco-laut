@@ -1,0 +1,15 @@
+{
+  "name": "LAPOR BU OVI - PT Parco Laut",
+  "short_name": "Lapor Bu Ovi",
+  "description": "Input kilat pengeluaran dan pemasukan CPMI",
+  "start_url": "6_laporan_keuangan.html",
+  "scope": "6_laporan_keuangan.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f1f7fc",
+  "theme_color": "#163a5c",
+  "icons": [
+    { "src": "icon-keuangan-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-keuangan-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
