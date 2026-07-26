@@ -3,7 +3,7 @@
   "short_name": "Update Cepat",
   "description": "Update data CPMI cepat lewat chat singkat",
   "start_url": "4_update_cepat.html",
-  "scope": "4_update_cepat.html",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f1f7fc",

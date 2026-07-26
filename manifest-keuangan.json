@@ -3,7 +3,7 @@
   "short_name": "Lapor Bu Ovi",
   "description": "Input kilat pengeluaran dan pemasukan CPMI",
   "start_url": "6_laporan_keuangan.html",
-  "scope": "6_laporan_keuangan.html",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f1f7fc",

@@ -3,7 +3,7 @@
   "short_name": "Tracking CPMI",
   "description": "Sistem tracking CPMI PT Parco Laut Cabang Indramayu",
   "start_url": "2_tracking_cpmi.html",
-  "scope": "2_tracking_cpmi.html",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f1f7fc",
