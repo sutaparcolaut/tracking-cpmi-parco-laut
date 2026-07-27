@@ -24,7 +24,17 @@
     font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text);
     height: 100vh; display: flex; flex-direction: column; overscroll-behavior: none;
   }
-  input, button { font-family: inherit; }
+  input, button { font-family: inherit; color: var(--text); }
+
+  /* Perbaikan bug umum di HP (terutama iPhone/Safari): teks di kolom login
+     kadang jadi tak terlihat (transparan) saat browser mendeteksi autofill. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text) !important;
+    -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+    caret-color: var(--text);
+  }
 
   /* ===== Login ===== */
   #loginScreen {
@@ -39,7 +49,7 @@
   .login-card h2 { font-size: 15px; margin: 0 0 2px; color: var(--navy-900); text-transform: uppercase; }
   .login-card p { font-size: 11.5px; color: var(--muted); margin: 0 0 18px; }
   .login-card label { display: block; text-align: left; font-size: 11.5px; font-weight: 600; color: var(--muted); margin: 0 0 4px; }
-  .login-card input { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+  .login-card input { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; font-size: 13px; color: var(--text); background: #fff; }
   .login-card button { width: 100%; padding: 11px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--blue-600), var(--blue-700)); color: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer; }
   #loginError { color: var(--bad-text); font-size: 11.5px; min-height: 14px; margin-bottom: 4px; }
 
@@ -227,6 +237,7 @@ function parseQuickUpdate(text) {
     { regex: /grup\s*majikan|grup\s*cari\s*majikan|\bgrup\b/, field: 'grup', label: 'Grup Cari Majikan' },
     { regex: /\bizin\b/, field: 'izin', label: 'Penyerahan Surat Izin' },
     { regex: /\bdaftar\b/, field: 'daftar', label: 'Tanggal Daftar' },
+    { regex: /\bpaspor\b/, field: 'statuspaspor', label: 'Status Paspor', value: 'Perpanjang', extraField: 'tglpaspor' },
   ];
   const statusPatterns = [
     { regex: /\bselesai\b/, status: 'selesai', label: 'Selesai' },
@@ -274,7 +285,7 @@ async function handleSend() {
     return;
   }
   if (!parsed.field && !parsed.status) {
-    addBotBubble('⚠ Kata kunci proses tidak dikenali. Gunakan salah satu: <b>MCU, Rekom ID, EC, Daftar, Izin, Grup, Selesai, Batal, Berjalan</b>.', 'err');
+    addBotBubble('⚠ Kata kunci proses tidak dikenali. Gunakan salah satu: <b>MCU, Rekom ID, Paspor, EC, Daftar, Izin, Grup, Selesai, Batal, Berjalan</b>.', 'err');
     return;
   }
 
@@ -298,8 +309,14 @@ async function handleSend() {
   let pesanBerhasil = '';
 
   if (parsed.field) {
-    updated[parsed.field.field] = today;
-    pesanBerhasil = `${parsed.field.label} diisi tanggal ${fmtTanggalIndo(today)}`;
+    if (Object.prototype.hasOwnProperty.call(parsed.field, 'value')) {
+      updated[parsed.field.field] = parsed.field.value;
+      if (parsed.field.extraField) updated[parsed.field.extraField] = today;
+      pesanBerhasil = `${parsed.field.label} diubah jadi "${parsed.field.value}"` + (parsed.field.extraField ? ` (tanggal ${fmtTanggalIndo(today)})` : '');
+    } else {
+      updated[parsed.field.field] = today;
+      pesanBerhasil = `${parsed.field.label} diisi tanggal ${fmtTanggalIndo(today)}`;
+    }
   }
   if (parsed.status) {
     updated.status = parsed.status.status;

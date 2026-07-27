@@ -173,6 +173,29 @@
 
   /* ===== Modal ===== */
   #modalOverlay { display: none; position: fixed; inset: 0; background: rgba(22,58,92,.5); backdrop-filter: blur(3px); align-items: center; justify-content: center; z-index: 10; }
+
+  /* ===== Kalender kustom (DD/MM/YYYY tetap, tidak ikut bahasa HP) ===== */
+  input.date-picker-input { cursor: pointer; background: #fff; }
+  .custom-date-picker {
+    display: none; position: fixed; z-index: 50; width: 240px; background: #fff; border-radius: 12px;
+    box-shadow: 0 20px 44px -12px rgba(20,84,143,.35); border: 1px solid var(--border); padding: 10px;
+    font-family: 'Inter', sans-serif; max-height: calc(100vh - 16px); overflow-y: auto;
+  }
+  .cdp-header { display: flex; gap: 6px; margin-bottom: 8px; }
+  .cdp-header select {
+    flex: 1; padding: 6px 4px; border-radius: 7px; border: 1px solid var(--border); font-size: 12px; background: var(--blue-50);
+  }
+  .cdp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
+  .cdp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cdp-days span { text-align: center; font-size: 12px; padding: 6px 0; border-radius: 6px; cursor: pointer; }
+  .cdp-days span.cdp-empty { cursor: default; }
+  .cdp-days span:not(.cdp-empty):hover { background: var(--blue-100); }
+  .cdp-days span.selected { background: var(--blue-700); color: #fff; font-weight: 700; }
+  .cdp-footer { display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .cdp-footer button {
+    background: none; border: none; color: var(--blue-700); font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 4px 6px;
+  }
+  .cdp-footer button:last-child { color: var(--muted); }
   #modal {
     background: #fff; border-radius: 18px; padding: 26px; width: 420px; max-width: 90vw;
     max-height: 85vh; overflow-y: auto; box-shadow: 0 28px 64px -16px rgba(20,84,143,.35);
@@ -261,8 +284,9 @@
 
   /* ===== Dashboard ===== */
   .dashboard-grid {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px;
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px;
   }
+  @media (max-width: 1300px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 1000px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
   .stat-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 16px;
@@ -444,6 +468,7 @@
       <p class="sub" id="scopeNotice" style="display:none; color:var(--gold); font-weight:700; margin-top:4px;"></p>
     </div>
     <div class="header-actions">
+      <button class="btn-ghost" id="dashboardToggleBtn">Sembunyikan Dashboard</button>
       <button class="btn-ghost" id="summaryToggleBtn">Ringkasan</button>
       <button class="btn-ghost" id="logoutBtn">Keluar</button>
     </div>
@@ -452,6 +477,7 @@
 
 <div class="page">
 
+<div id="dashboardWrap">
 <div class="dashboard-grid" id="dashboardGrid">
   <div class="stat-card stat-total" data-filter="all" onclick="applyStatusFilter('all')">
     <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
@@ -483,6 +509,13 @@
     <div class="stat-label">Butuh Perhatian</div>
     <div class="stat-hint">Klik untuk filter</div>
   </div>
+  <div class="stat-card stat-selesai" data-filter="penempatan" onclick="applyStatusFilter('penempatan')">
+    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
+    <div class="stat-value" id="statPenempatan">0</div>
+    <div class="stat-label">Jumlah Penempatan</div>
+    <div class="stat-hint">Sudah terbang &middot; klik untuk filter</div>
+  </div>
+</div>
 </div>
 
 <div class="toolbar">
@@ -512,7 +545,7 @@
   <thead>
     <tr>
       <th>No.</th><th class="col-extra">No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Tanggal Lahir</th><th class="col-extra">Alamat</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
-      <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Medical</th><th>Rekom ID</th>
+      <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Medical</th><th>Rekom ID</th><th>Paspor</th>
       <th>Status</th><th>Tanggal EC</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th></th>
     </tr>
   </thead>
@@ -555,13 +588,26 @@
 </div>
 </div>
 
+<div class="custom-date-picker" id="customDatePicker">
+  <div class="cdp-header">
+    <select id="cdpMonthSel"></select>
+    <select id="cdpYearSel"></select>
+  </div>
+  <div class="cdp-weekdays"><span>Sn</span><span>Sl</span><span>Rb</span><span>Km</span><span>Jm</span><span>Sb</span><span>Mg</span></div>
+  <div class="cdp-days" id="cdpDays"></div>
+  <div class="cdp-footer">
+    <button type="button" onclick="cdpToday()">Hari ini</button>
+    <button type="button" onclick="cdpClear()">Kosongkan</button>
+  </div>
+</div>
+
 <div id="modalOverlay">
   <div id="modal">
     <h3 id="modalTitle">Tambah CPMI</h3>
 
     <label>Nomor Register</label><input id="f_noreg" type="text" />
     <label>Nama CPMI</label><input id="f_nama" type="text" />
-    <label>Tanggal Lahir</label><input id="f_tgllahir" type="date" />
+    <label>Tanggal Lahir</label><input id="f_tgllahir" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Alamat</label><input id="f_alamat" type="text" />
     <label>Kabupaten</label>
     <select id="f_kabupaten">
@@ -578,7 +624,7 @@
     <label>Email</label><input id="f_email" type="text" />
     <label>Nomor telepon</label><input id="f_telp" type="text" />
     <label>Password SISKOP2MI</label><input id="f_pass" type="text" />
-    <label>Tanggal daftar</label><input id="f_daftar" type="date" />
+    <label>Tanggal daftar</label><input id="f_daftar" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Sales</label>
     <select id="f_sales">
       <option value="">- Pilih Sales -</option>
@@ -596,12 +642,13 @@
       <option value="">- Pilih Status Majikan -</option>
       <option value="Bawa Majikan">Bawa Majikan</option>
       <option value="Dicarikan Majikan">Dicarikan Majikan</option>
+      <option value="Direct Hire">Direct Hire</option>
     </select>
-    <label>Tanggal TTD Majikan</label><input id="f_ttdmajikan" type="date" />
+    <label>Tanggal TTD Majikan</label><input id="f_ttdmajikan" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <div class="form-row">
       <div>
         <label>Tanggal MCU</label>
-        <input id="f_mcu" type="date" />
+        <input id="f_mcu" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
       </div>
       <div>
         <label>Hasil Medical</label>
@@ -617,17 +664,31 @@
       <label>Keterangan Hasil Medical (kenapa Pending/Unfit)</label>
       <input id="f_ketmedical" type="text" />
     </div>
-    <label>Tanggal rekom ID</label><input id="f_rekom" type="date" />
+    <div class="form-row">
+      <div>
+        <label>Status Paspor</label>
+        <select id="f_statuspaspor">
+          <option value="">- Belum Ada -</option>
+          <option value="Ready">Ready</option>
+          <option value="Perpanjang">Perpanjang</option>
+        </select>
+      </div>
+      <div id="tglPasporWrap" style="display:none;">
+        <label>Tanggal Pasporan (perpanjangan)</label>
+        <input id="f_tglpaspor" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
+      </div>
+    </div>
+    <label>Tanggal rekom ID</label><input id="f_rekom" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Status proses</label>
     <select id="f_status">
       <option value="berjalan">Sedang berjalan</option>
       <option value="selesai">Proses selesai</option>
       <option value="batal">Batal / mundur</option>
     </select>
-    <label>Tanggal OPP</label><input id="f_opp" type="date" />
-    <label>Tanggal Terbang</label><input id="f_terbang" type="date" />
+    <label>Tanggal OPP</label><input id="f_opp" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
+    <label>Tanggal Terbang</label><input id="f_terbang" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Catatan Selama Penempatan</label><input id="f_catatan" type="text" />
-    <label>Tanggal EC</label><input id="f_ec" type="date" />
+    <label>Tanggal EC</label><input id="f_ec" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
       <button id="cancelBtn">Batal</button>
       <button class="primary" id="saveBtn">Simpan</button>
@@ -635,6 +696,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
 // ============================================================
 // GANTI URL DI BAWAH INI dengan URL Web App dari Google Apps Script
@@ -655,6 +717,160 @@ function fmtDate(d) {
   const dt = new Date(d + 'T00:00:00');
   return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+// ===== Kalender kustom untuk kolom tanggal di form Tambah/Edit CPMI =====
+// Selalu tampil DD/MM/YYYY, tidak ikut pengaturan Bahasa/Wilayah HP.
+// Nilai ISO (YYYY-MM-DD) yang sebenarnya dipakai untuk disimpan tersimpan di data-iso pada input.
+const BULAN_NAMA_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+function isoToDisplayDDMMYYYY(iso) {
+  if (!iso) return '';
+  const parts = String(iso).split('-');
+  if (parts.length !== 3) return '';
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
+}
+
+function setDateField(id, iso) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.dataset.iso = iso || '';
+  el.value = isoToDisplayDDMMYYYY(iso);
+}
+
+function getDateField(id) {
+  const el = document.getElementById(id);
+  return (el && el.dataset.iso) || '';
+}
+
+// Mengurai tanggal yang diketik manual (DD/MM/YYYY) jadi ISO (YYYY-MM-DD).
+// Mengembalikan null kalau formatnya belum lengkap/valid (dibiarkan dulu, jangan dipaksa).
+function displayToIso(str) {
+  const m = String(str).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const d = parseInt(m[1], 10), mo = parseInt(m[2], 10), y = parseInt(m[3], 10);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null; // tolak tanggal tidak valid, misal 31/02
+  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+let cdpTargetId = null;
+let cdpViewYear = new Date().getFullYear();
+let cdpViewMonth = new Date().getMonth();
+
+function isiPilihanBulanTahunCdp() {
+  const monthSel = document.getElementById('cdpMonthSel');
+  monthSel.innerHTML = BULAN_NAMA_ID.map((b, i) => `<option value="${i}">${b}</option>`).join('');
+  const yearSel = document.getElementById('cdpYearSel');
+  const now = new Date().getFullYear();
+  let opts = '';
+  for (let y = now + 3; y >= now - 90; y--) opts += `<option value="${y}">${y}</option>`;
+  yearSel.innerHTML = opts;
+}
+
+function renderCdp() {
+  document.getElementById('cdpMonthSel').value = String(cdpViewMonth);
+  document.getElementById('cdpYearSel').value = String(cdpViewYear);
+
+  const firstDay = new Date(cdpViewYear, cdpViewMonth, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // Senin = 0
+  const daysInMonth = new Date(cdpViewYear, cdpViewMonth + 1, 0).getDate();
+  const selectedIso = cdpTargetId ? getDateField(cdpTargetId) : '';
+
+  let html = '';
+  for (let i = 0; i < startOffset; i++) html += '<span class="cdp-empty"></span>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${cdpViewYear}-${String(cdpViewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    html += `<span class="${iso === selectedIso ? 'selected' : ''}" onclick="cdpPick(${d})">${d}</span>`;
+  }
+  document.getElementById('cdpDays').innerHTML = html;
+}
+
+function openDatePicker(inputEl) {
+  cdpTargetId = inputEl.id;
+  const iso = inputEl.dataset.iso;
+  const base = iso ? new Date(iso + 'T00:00:00') : new Date();
+  cdpViewYear = base.getFullYear();
+  cdpViewMonth = base.getMonth();
+  renderCdp();
+
+  const picker = document.getElementById('customDatePicker');
+  picker.style.display = 'block';
+  const rect = inputEl.getBoundingClientRect();
+  const pickerWidth = 240;
+  const pickerHeight = 320; // perkiraan tinggi kalender (header + grid + footer)
+  let left = rect.left;
+  if (left + pickerWidth > window.innerWidth - 8) left = window.innerWidth - pickerWidth - 8;
+
+  const ruangBawah = window.innerHeight - rect.bottom;
+  const tampilkanDiAtas = ruangBawah < pickerHeight && rect.top > pickerHeight;
+  const top = tampilkanDiAtas ? (rect.top - pickerHeight - 4) : (rect.bottom + 4);
+
+  picker.style.top = Math.max(8, top) + 'px';
+  picker.style.left = Math.max(8, left) + 'px';
+}
+
+function closeCdp() {
+  document.getElementById('customDatePicker').style.display = 'none';
+  cdpTargetId = null;
+}
+
+window.cdpPick = function(day) {
+  const iso = `${cdpViewYear}-${String(cdpViewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  setDateField(cdpTargetId, iso);
+  closeCdp();
+};
+
+window.cdpToday = function() {
+  const now = new Date();
+  const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  setDateField(cdpTargetId, iso);
+  closeCdp();
+};
+
+window.cdpClear = function() {
+  setDateField(cdpTargetId, '');
+  closeCdp();
+};
+
+isiPilihanBulanTahunCdp();
+document.getElementById('cdpMonthSel').addEventListener('change', (e) => {
+  cdpViewMonth = Number(e.target.value);
+  renderCdp();
+});
+document.getElementById('cdpYearSel').addEventListener('change', (e) => {
+  cdpViewYear = Number(e.target.value);
+  renderCdp();
+});
+document.querySelectorAll('.date-picker-input').forEach((input) => {
+  input.addEventListener('click', () => openDatePicker(input));
+  // Ketik manual (format DD/MM/YYYY) juga langsung tersimpan, tidak wajib pakai kalender
+  input.addEventListener('input', (e) => {
+    const val = e.target.value.trim();
+    if (!val) {
+      e.target.dataset.iso = '';
+      return;
+    }
+    const iso = displayToIso(val);
+    if (iso) {
+      e.target.dataset.iso = iso;
+      if (cdpTargetId === e.target.id) {
+        const base = new Date(iso + 'T00:00:00');
+        cdpViewYear = base.getFullYear();
+        cdpViewMonth = base.getMonth();
+        renderCdp();
+      }
+    }
+    // kalau belum lengkap/valid (misal masih ngetik "27/0"), dibiarkan dulu -- tidak dipaksa
+  });
+});
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('customDatePicker');
+  if (picker.style.display === 'block' && !picker.contains(e.target) && !e.target.classList.contains('date-picker-input')) {
+    closeCdp();
+  }
+});
 
 function statusBadge(status) {
   const map = {
@@ -680,15 +896,53 @@ function medicalBadge(hasil) {
 
 // Alamat dipotong separuh supaya kolom tidak makan tempat.
 // Kalau lebih panjang dari itu, muncul tombol kecil untuk lihat alamat lengkap lewat pop-up.
+// Selalu ada tombol salin (📋) supaya bisa langsung ditempel ke SISKOP2MI tanpa ketik ulang.
 function alamatCell(r) {
   if (!r.alamat) return '-';
   const full = r.alamat;
   const half = Math.ceil(full.length / 2);
-  if (full.length <= half + 5) return full; // sudah pendek, tampilkan apa adanya
-  const short = full.slice(0, half).trim();
+  const isShort = full.length <= half + 5;
   const escaped = full.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-  return `<span style="white-space:normal;">${short}&hellip;</span> <button onclick="alert('Alamat lengkap:\\n${escaped}')" title="Lihat alamat lengkap" style="padding:1px 5px; font-size:10px; margin-left:2px;">🔍</button>`;
+  const teks = isShort ? full : `<span style="white-space:normal;">${full.slice(0, half).trim()}&hellip;</span>`;
+  const tombolLihat = isShort ? '' : ` <button onclick="alert('Alamat lengkap:\\n${escaped}')" title="Lihat alamat lengkap" style="padding:1px 5px; font-size:10px;">🔍</button>`;
+  const tombolSalin = ` <button id="copyBtn_${r.id}" onclick="copyAlamat('${r.id}')" title="Salin alamat (untuk SISKOP2MI)" style="padding:1px 5px; font-size:10px;">📋</button>`;
+  return teks + tombolLihat + tombolSalin;
 }
+
+// Salin alamat lengkap ke clipboard HP, siap tempel ke SISKOP2MI tanpa ketik manual.
+window.copyAlamat = function(id) {
+  const r = records.find(x => x.id === id);
+  if (!r || !r.alamat) return;
+  const btn = document.getElementById('copyBtn_' + id);
+  const tampilkanSukses = () => {
+    if (btn) {
+      const asli = btn.textContent;
+      btn.textContent = '✅';
+      setTimeout(() => { btn.textContent = asli; }, 1200);
+    }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(r.alamat).then(tampilkanSukses).catch(() => {
+      alert('Gagal menyalin otomatis. Alamat:\n' + r.alamat);
+    });
+  } else {
+    // fallback untuk browser lama yang belum dukung Clipboard API
+    const temp = document.createElement('textarea');
+    temp.value = r.alamat;
+    temp.style.position = 'fixed';
+    temp.style.opacity = '0';
+    document.body.appendChild(temp);
+    temp.focus();
+    temp.select();
+    try {
+      document.execCommand('copy');
+      tampilkanSukses();
+    } catch (e) {
+      alert('Gagal menyalin otomatis. Alamat:\n' + r.alamat);
+    }
+    document.body.removeChild(temp);
+  }
+};
 
 // Gabungan Hasil Medical + Keterangan dalam 1 kolom.
 // Kalau Pending/Unfit dan ada keterangan, badge bisa diklik untuk lihat alasan lewat pop-up.
@@ -701,6 +955,14 @@ function medicalCell(r) {
     return `<span onclick="alert('Keterangan ${r.hasilmedical}: ${escaped}')" style="cursor:pointer;" title="Klik untuk lihat keterangan">${badge} ℹ️</span>`;
   }
   return badge;
+}
+
+// Kolom Paspor: badge hijau "Ready" kalau paspornya sudah siap,
+// atau tanggal perpanjangan kalau CPMI sedang memperpanjang paspor.
+function pasporCell(r) {
+  if (r.statuspaspor === 'Ready') return `<span class="badge status-selesai">Ready</span>`;
+  if (r.statuspaspor === 'Perpanjang') return `<span class="badge status-berjalan">Perpanjang</span><br/>${fmtDate(r.tglpaspor)}`;
+  return '-';
 }
 
 function daysSince(dateStr) {
@@ -784,12 +1046,14 @@ function renderDashboard() {
   const selesai = records.filter(r => r.status === 'selesai').length;
   const batal = records.filter(r => r.status === 'batal').length;
   const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r)).length;
+  const penempatan = records.filter(r => !!r.terbang).length;
 
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statBerjalan').textContent = berjalan;
   document.getElementById('statSelesai').textContent = selesai;
   document.getElementById('statBatal').textContent = batal;
   document.getElementById('statPengingat').textContent = pengingat;
+  document.getElementById('statPenempatan').textContent = penempatan;
 
   document.querySelectorAll('#dashboardGrid .stat-card').forEach((card) => {
     card.classList.toggle('active', card.dataset.filter === statusFilter);
@@ -797,7 +1061,7 @@ function renderDashboard() {
 
   const chip = document.getElementById('filterChip');
   const chipLabel = document.getElementById('filterChipLabel');
-  const labels = { berjalan: 'Proses Berjalan', selesai: 'Selesai', batal: 'Batal / Mundur', alert: 'Butuh Perhatian' };
+  const labels = { berjalan: 'Proses Berjalan', selesai: 'Selesai', batal: 'Batal / Mundur', alert: 'Butuh Perhatian', penempatan: 'Jumlah Penempatan (Sudah Terbang)' };
   if (statusFilter === 'all') {
     chip.style.display = 'none';
   } else {
@@ -821,6 +1085,7 @@ function render() {
   else if (statusFilter === 'selesai') filtered = filtered.filter(r => r.status === 'selesai');
   else if (statusFilter === 'batal') filtered = filtered.filter(r => r.status === 'batal');
   else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r));
+  else if (statusFilter === 'penempatan') filtered = filtered.filter(r => !!r.terbang);
   lastFiltered = filtered;
   const body = document.getElementById('tableBody');
 
@@ -832,7 +1097,7 @@ function render() {
   const pageItems = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
   if (filtered.length === 0) {
-    body.innerHTML = '<tr><td colspan="22" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
+    body.innerHTML = '<tr><td colspan="23" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
   } else {
     body.innerHTML = pageItems.map((r, i) => {
       const alert = isMcuOverdue(r) || isEcOverdue(r);
@@ -853,7 +1118,8 @@ function render() {
         <td class="col-extra">${fmtDate(r.ttdmajikan)}</td>
         <td>${fmtDate(r.mcu)}</td>
         <td>${medicalCell(r)}</td>
-        <td>${fmtDate(r.rekom)}</td>
+        <td>${fmtDate(r.rekom)}<br/><button onclick="printPP('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">Cetak PP</button></td>
+        <td>${pasporCell(r)}</td>
         <td>${statusBadge(r.status)}${r.status === 'selesai' ? `<br/><button onclick="kirimWaSales('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">📞 Hubungi Sales</button>` : ''}</td>
         <td>${fmtDate(r.ec)}</td>
         <td class="col-extra">${fmtDate(r.opp)}</td>
@@ -891,14 +1157,14 @@ function openModal(record) {
   document.getElementById('modalTitle').textContent = record ? 'Edit CPMI' : 'Tambah CPMI';
   document.getElementById('f_noreg').value = record ? record.noreg : '';
   document.getElementById('f_nama').value = record ? record.nama : '';
-  document.getElementById('f_tgllahir').value = record ? record.tgllahir : '';
+  setDateField('f_tgllahir', record ? record.tgllahir : '');
   document.getElementById('f_alamat').value = record ? record.alamat : '';
   document.getElementById('f_kabupaten').value = record ? record.kabupaten : '';
   document.getElementById('f_keterangan').value = record ? record.keterangan : '';
   document.getElementById('f_email').value = record ? record.email : '';
   document.getElementById('f_telp').value = record ? record.telp : '';
   document.getElementById('f_pass').value = record ? record.pass : '';
-  document.getElementById('f_daftar').value = record ? record.daftar : '';
+  setDateField('f_daftar', record ? record.daftar : '');
   // Akun yang dibatasi ke satu Sales tertentu: field Sales otomatis terisi namanya sendiri dan terkunci
   const salesField = document.getElementById('f_sales');
   if (currentUser && currentUser.salesScope) {
@@ -909,18 +1175,22 @@ function openModal(record) {
     salesField.value = record ? record.sales : '';
   }
   document.getElementById('f_statusmajikan').value = record ? record.statusmajikan : '';
-  document.getElementById('f_ttdmajikan').value = record ? record.ttdmajikan : '';
-  document.getElementById('f_mcu').value = record ? record.mcu : '';
+  setDateField('f_ttdmajikan', record ? record.ttdmajikan : '');
+  setDateField('f_mcu', record ? record.mcu : '');
   document.getElementById('f_hasilmedical').value = record ? record.hasilmedical : '';
   document.getElementById('f_ketmedical').value = record ? record.ketmedical : '';
   document.getElementById('ketMedicalWrap').style.display =
     (record && (record.hasilmedical === 'Pending' || record.hasilmedical === 'Unfit')) ? 'block' : 'none';
-  document.getElementById('f_rekom').value = record ? record.rekom : '';
+  document.getElementById('f_statuspaspor').value = record ? record.statuspaspor : '';
+  setDateField('f_tglpaspor', record ? record.tglpaspor : '');
+  document.getElementById('tglPasporWrap').style.display =
+    (record && record.statuspaspor === 'Perpanjang') ? 'block' : 'none';
+  setDateField('f_rekom', record ? record.rekom : '');
   document.getElementById('f_status').value = record ? record.status : 'berjalan';
-  document.getElementById('f_opp').value = record ? record.opp : '';
-  document.getElementById('f_terbang').value = record ? record.terbang : '';
+  setDateField('f_opp', record ? record.opp : '');
+  setDateField('f_terbang', record ? record.terbang : '');
   document.getElementById('f_catatan').value = record ? record.catatan : '';
-  document.getElementById('f_ec').value = record ? record.ec : '';
+  setDateField('f_ec', record ? record.ec : '');
   document.getElementById('modalOverlay').style.display = 'flex';
 }
 
@@ -1011,44 +1281,82 @@ window.kirimWaManual = function(id) {
 
 const LETTERHEAD_LOGO = "data:image/jpeg;base64,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";
 
-// ===== Export ke Excel (CSV) =====
-// Mengekspor data yang sedang tampil di tabel (mengikuti pencarian & filter aktif) ke file CSV
-// yang bisa langsung dibuka di Microsoft Excel / Google Sheets.
+// ===== Export ke Excel (.xlsx asli, dengan tabel rapi) =====
+// Mengekspor data yang sedang tampil di tabel (mengikuti pencarian & filter aktif) ke file
+// Excel sungguhan (bukan CSV) — ada judul, header berwarna, garis tabel, dan status berwarna.
 function exportToExcel() {
   const data = lastFiltered.length ? lastFiltered : records;
   if (!data.length) {
     alert('Tidak ada data untuk diekspor.');
     return;
   }
-  const headers = ['No.Register','Nama CPMI','Tanggal Lahir','Alamat','Kabupaten','Kontak','Sales','Tgl Daftar','Status Majikan','Tgl MCU','Hasil Medical','Rekom ID','Status','Tgl EC','Tgl OPP','Tgl Terbang','Catatan'];
-  const rows = data.map(r => [
-    r.noreg || '', r.nama || '', fmtDate(r.tgllahir), r.alamat || '', r.kabupaten || '',
-    r.telp || '', r.sales || '', fmtDate(r.daftar), r.statusmajikan || '', fmtDate(r.mcu),
-    r.hasilmedical || '', fmtDate(r.rekom), r.status || '', fmtDate(r.ec), fmtDate(r.opp),
-    fmtDate(r.terbang), r.catatan || ''
-  ]);
-  const escapeCsv = (val) => {
-    const s = String(val == null ? '' : val);
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-      return '"' + s.replace(/"/g, '""') + '"';
-    }
-    return s;
+  if (typeof XLSX === 'undefined') {
+    alert('Modul Excel belum siap, coba lagi sebentar.');
+    return;
+  }
+
+  const headers = ['No.Register','Nama CPMI','Tanggal Lahir','Alamat','Kabupaten','Kontak','Sales','Tgl Daftar','Status Majikan','Tgl MCU','Hasil Medical','Rekom ID','Status Paspor','Status','Tgl EC','Tgl OPP','Tgl Terbang','Catatan'];
+
+  const THIN = { style: 'thin', color: { rgb: 'B9C7D6' } };
+  const BORDER_ALL = { top: THIN, bottom: THIN, left: THIN, right: THIN };
+  const titleStyle = { font: { bold: true, sz: 16, color: { rgb: '163A5C' } }, alignment: { horizontal: 'center' } };
+  const subStyle = { font: { italic: true, sz: 10, color: { rgb: '6A8099' } }, alignment: { horizontal: 'center' } };
+  const headerStyle = { font: { bold: true, sz: 10.5, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '1F5C96' } }, border: BORDER_ALL, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+  const cellStyle = { border: BORDER_ALL, alignment: { vertical: 'center', wrapText: true }, font: { sz: 10 } };
+  const cellStyleAlt = { border: BORDER_ALL, alignment: { vertical: 'center', wrapText: true }, font: { sz: 10 }, fill: { fgColor: { rgb: 'F2F8FD' } } };
+  const statusColors = {
+    berjalan: { rgb: '8A5A10' }, selesai: { rgb: '146A3D' }, batal: { rgb: '9A2B2B' }
   };
-  const csvLines = [headers.map(escapeCsv).join(',')].concat(
-    rows.map(row => row.map(escapeCsv).join(','))
-  );
-  // \uFEFF (BOM) supaya Excel membaca karakter Indonesia (é, spasi khusus, dll) dengan benar
-  const csvContent = '\uFEFF' + csvLines.join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const statusLabels = { berjalan: 'Berjalan', selesai: 'Selesai', batal: 'Batal / Mundur' };
+
+  const rows = [];
+  rows.push([{ v: 'DATA CPMI \u2014 PT PARCO LAUT CABANG INDRAMAYU', s: titleStyle }]);
+  rows.push([{ v: `Diekspor pada ${tanggalIndonesia ? tanggalIndonesia() : new Date().toLocaleDateString('id-ID')} \u00b7 Total ${data.length} data`, s: subStyle }]);
+  rows.push([]);
+  rows.push(headers.map(h => ({ v: h, s: headerStyle })));
+
+  data.forEach((r, i) => {
+    const style = i % 2 === 0 ? cellStyle : cellStyleAlt;
+    const statusStyle = Object.assign({}, style, { font: Object.assign({}, style.font, { bold: true, color: statusColors[r.status] || { rgb: '1C334A' } }) });
+    rows.push([
+      { v: r.noreg || '-', s: style },
+      { v: r.nama || '-', s: Object.assign({}, style, { font: Object.assign({}, style.font, { bold: true }) }) },
+      { v: fmtDate(r.tgllahir), s: style },
+      { v: r.alamat || '-', s: style },
+      { v: r.kabupaten || '-', s: style },
+      { v: r.telp || '-', s: style },
+      { v: r.sales || '-', s: style },
+      { v: fmtDate(r.daftar), s: style },
+      { v: r.statusmajikan || '-', s: style },
+      { v: fmtDate(r.mcu), s: style },
+      { v: r.hasilmedical || '-', s: style },
+      { v: fmtDate(r.rekom), s: style },
+      { v: r.statuspaspor === 'Ready' ? 'Ready' : (r.statuspaspor === 'Perpanjang' ? `Perpanjang (${fmtDate(r.tglpaspor)})` : '-'), s: style },
+      { v: statusLabels[r.status] || r.status || '-', s: statusStyle },
+      { v: fmtDate(r.ec), s: style },
+      { v: fmtDate(r.opp), s: style },
+      { v: fmtDate(r.terbang), s: style },
+      { v: r.catatan || '-', s: style }
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } }
+  ];
+  ws['!cols'] = [
+    { wch: 14 }, { wch: 24 }, { wch: 13 }, { wch: 26 }, { wch: 13 }, { wch: 15 }, { wch: 10 },
+    { wch: 13 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 13 },
+    { wch: 12 }, { wch: 12 }, { wch: 13 }, { wch: 24 }
+  ];
+  ws['!freeze'] = { xSplit: 0, ySplit: 4 };
+  ws['!autofilter'] = { ref: `A4:${String.fromCharCode(65 + headers.length - 1)}4` };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data CPMI');
   const tanggal = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `Data_CPMI_ParcoLaut_${tanggal}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  XLSX.writeFile(wb, `Data_CPMI_ParcoLaut_${tanggal}.xlsx`);
 }
 document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
 
@@ -1073,22 +1381,22 @@ window.printSuratPengantar = function(id) {
 <meta charset="UTF-8" />
 <title>Surat Pengantar - ${r.nama}</title>
 <style>
-  @page { size: A4; margin: 2.2cm 2.2cm 2cm; }
+  @page { size: A4; margin: 1.2cm 2.2cm 2cm; }
   * { box-sizing: border-box; }
-  body { font-family: 'Times New Roman', Times, serif; font-size: 12.5pt; color: #000; margin: 0; padding: 0 6mm; line-height: 1.5; }
-  .letterhead { display: flex; align-items: center; justify-content: center; gap: 64px; margin-bottom: 4px; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: #000; margin: 0; padding: 0 6mm; line-height: 1.5; }
+  .letterhead { display: flex; align-items: center; justify-content: center; gap: 64px; margin-bottom: 4px; visibility: hidden; }
   .letterhead img { width: 90px; height: auto; flex-shrink: 0; }
   .letterhead-text { text-align: center; color: #00A6E0; }
   .letterhead-text .company-name { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 24pt; letter-spacing: 0.5px; margin: 0; text-align: center; }
   .letterhead-text .company-tag { font-size: 10pt; font-weight: 600; margin: 2px 0; text-align: center; }
   .letterhead-text .company-addr { font-size: 8.5pt; margin: 1px 0; text-align: center; }
-  .letterhead-rule { border: none; border-top: 3px solid #4472C4; margin: 6px 0 1px; }
+  .letterhead-rule { border: none; border-top: 3px solid #4472C4; margin: 6px 0 1px; visibility: hidden; }
   .letterhead-rule.thin { border-top-width: 1px; margin-top: 3px; margin-bottom: 14px; }
-  .letter-date { text-align: right; margin: 4px 0 18px; font-size: 12.5pt; }
-  .letter-title { text-align: center; font-weight: 700; text-decoration: underline; font-size: 13.5pt; margin-bottom: 18px; }
+  .letter-date { text-align: right; margin: 4px 0 18px; font-size: 11pt; }
+  .letter-title { text-align: center; font-weight: 700; text-decoration: underline; font-size: 12pt; margin-bottom: 18px; }
   p { margin: 0 0 12px; text-align: justify; }
   .field-row { margin: 0 0 4px 36px; }
-  .field-row b { display: inline-block; width: 70px; }
+  .field-row b { display: inline-block; width: 92px; white-space: nowrap; vertical-align: top; }
   .signature-block { margin-top: 30px; }
   .signature-block .sign-place { margin-bottom: 4px; }
   .signature-name { text-decoration: underline; font-weight: 700; margin-top: 62px; margin-bottom: 2px; }
@@ -1127,11 +1435,12 @@ window.printSuratPengantar = function(id) {
 <div class="field-row"><b>Nama</b> : TRI WAHYU NURLIA, S.Pi</div>
 <div class="field-row"><b>Jabatan</b> : Direktur Utama PT. PARCO LAUT</div>
 <div class="field-row"><b>Alamat</b> : Ds. Sukorejo Rt.04 Rw. 01 No. 75</div>
-<div class="field-row" style="margin-left:106px;">Kec. Buduran, Kab. Sidoarjo, Jawa Timur 61252</div>
+<div class="field-row" style="margin-left:128px;">Kec. Buduran, Kab. Sidoarjo, Jawa Timur 61252</div>
 <div class="field-row"><b>Telp/Fax</b> : 031-8956609, 8075237</div>
 
 <p style="margin-top:16px;">Menerangkan bahwa PMI di bawah ini :</p>
 <div class="field-row"><b>Nama</b> : ${r.nama || '-'}</div>
+<div class="field-row"><b>Tanggal Lahir</b> : ${fmtDate(r.tgllahir)}</div>
 <div class="field-row"><b>Alamat</b> : ${r.alamat || '-'}</div>
 
 <p style="margin-top:16px;">Adalah benar proses sebagai Calon Pekerja Migran Indonesia dengan Negara tujuan penempatan <b>Hong Kong</b> melalui <b>PT. Parco Laut</b>. Bersama ini kami mohon agar kiranya dapat diberikan izin mengetahui desa sebagai syarat untuk Verifikasi Perjanjian Penempatan.</p>
@@ -1154,11 +1463,191 @@ window.printSuratPengantar = function(id) {
   win.document.close();
 };
 
+// ===== Cetak PP (Perjanjian Penempatan) =====
+// Angka ke huruf Bahasa Indonesia, dipakai untuk "tanggal PP dicetak dalam bentuk huruf"
+function angkaKeHuruf(n) {
+  const satuan = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh',
+    'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas', 'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
+  function konversi(num) {
+    if (num < 20) return satuan[num];
+    if (num < 100) {
+      const puluh = Math.floor(num / 10), sisa = num % 10;
+      return (puluh === 1 ? 'sepuluh' : satuan[puluh] + ' puluh') + (sisa ? ' ' + satuan[sisa] : '');
+    }
+    if (num < 200) return 'seratus' + (num % 100 ? ' ' + konversi(num % 100) : '');
+    if (num < 1000) {
+      const ratus = Math.floor(num / 100), sisa = num % 100;
+      return satuan[ratus] + ' ratus' + (sisa ? ' ' + konversi(sisa) : '');
+    }
+    if (num < 2000) return 'seribu' + (num % 1000 ? ' ' + konversi(num % 1000) : '');
+    const ribu = Math.floor(num / 1000), sisa = num % 1000;
+    return konversi(ribu) + ' ribu' + (sisa ? ' ' + konversi(sisa) : '');
+  }
+  return konversi(n);
+}
+
+function bulanRomawi(monthIndex0) {
+  return ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][monthIndex0];
+}
+
+window.printPP = function(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+
+  const hariList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const bulanList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const now = new Date();
+  const hari = hariList[now.getDay()];
+  const tanggalHuruf = angkaKeHuruf(now.getDate());
+  const bulanNama = bulanList[now.getMonth()];
+  const tahunHuruf = angkaKeHuruf(now.getFullYear());
+  const romawi = bulanRomawi(now.getMonth());
+  const tahunSekarang = now.getFullYear();
+
+  const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Perjanjian Penempatan - ${r.nama}</title>
+<style>
+  @page { size: A4; margin: 2.2cm 1cm 2cm 1cm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: #000; margin: 0; padding: 0 4mm; line-height: 1.5; }
+  .kop-space { height: 3cm; }
+  h1 { text-align: center; font-size: 14pt; font-weight: 700; margin: 0 0 16px; }
+  p { margin: 0 0 12px; text-align: justify; }
+  .field-row { margin: 0 0 4px 36px; }
+  .field-row b { display: inline-block; width: 80px; }
+  .pasal-title { font-weight: 700; text-align: center; margin: 18px 0 8px; }
+  .ayat { margin: 0 0 10px 24px; text-align: justify; }
+  table.ttd { width: 100%; border-collapse: collapse; margin-top: 40px; }
+  table.ttd td { width: 50%; text-align: center; vertical-align: top; padding: 0 20px; border: none; }
+  table.ttd .jabatan { margin-top: 100px; }
+  table.ttd .nama { text-decoration: underline; font-weight: 700; }
+  [contenteditable="true"]:hover { outline: 1px dashed #9ad2f2; outline-offset: 2px; }
+  [contenteditable="true"]:focus { outline: 1px solid #1f5c96; outline-offset: 2px; background: #f7fbfe; }
+  .pp-nomor { background: #fff3cd; padding: 1px 4px; border-radius: 3px; }
+  .no-print {
+    position: fixed; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
+  .no-print button {
+    padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 8px;
+    border: none; background: #14548f; color: #fff; cursor: pointer;
+  }
+  .no-print .hint {
+    background: #fff3cd; color: #7a5c00; font-size: 11.5px; padding: 8px 12px; border-radius: 8px; max-width: 240px; text-align: right;
+  }
+  /* Aturan print HARUS ditulis PALING TERAKHIR supaya menang dan benar-benar menyembunyikan .no-print saat dicetak */
+  @media print {
+    .kop-space { height: 3cm; }
+    .no-print { display: none !important; }
+    .pp-nomor { background: none; }
+    [contenteditable="true"]:hover, [contenteditable="true"]:focus { outline: none; background: none; }
+  }
+</style>
+</head>
+<body contenteditable="true">
+
+<div class="no-print" contenteditable="false">
+  <div class="hint">✏️ Seluruh isi dokumen ini bisa langsung diedit (klik di teks mana pun) sebelum dicetak. Jangan lupa isi nomor PP yang masih ditandai kuning.</div>
+  <button onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+</div>
+
+<div class="kop-space" contenteditable="false"></div>
+
+<h1>PERJANJIAN PENEMPATAN</h1>
+<p style="text-align:center; font-weight:700;">NOMOR : <span class="pp-nomor">___</span>/PP/PL-JBR/${romawi}/${tahunSekarang}</p>
+
+<p>Pada hari ini ${hari} tanggal ${tanggalHuruf} bulan ${bulanNama} tahun ${tahunHuruf} telah diadakan Perjanjian Penempatan Calon Pekerja Migran Indonesia oleh dan antara :</p>
+
+<div class="field-row"><b>Nama</b> : TRI WAHYU NURLIA S,PSI</div>
+<div class="field-row"><b>Jabatan</b> : Direktur Utama PT PARCO LAUT</div>
+<div class="field-row"><b>Alamat</b> : JL. SUKOREJO RT.04 RW.01 NO.75 BUDURAN, SIDOARJO JAWA TIMUR</div>
+<p style="margin-left:36px;">Dalam hal ini bertindak untuk dan atas nama PARCO LAUT selanjutnya disebut sebagai <b>PIHAK KESATU.</b></p>
+
+<div class="field-row"><b>Nama CPMI</b> : <b>${r.nama || '-'}</b></div>
+<div class="field-row"><b>Jabatan</b> : House Maid</div>
+<div class="field-row"><b>Alamat</b> : ${r.alamat || '-'}</div>
+<p style="margin-left:36px;">selanjutnya disebut sebagai <b>PIHAK KEDUA.</b></p>
+
+<p>PIHAK KESATU dan PIHAK KEDUA telah sepakat untuk mengadakan Perjanjian Penempatan dengan ketentuan sebagai Berikut :</p>
+
+<div class="pasal-title">Pasal 1</div>
+<div class="ayat">(1) <b>PIHAK KESATU</b> sanggup menempatkan <b>PIHAK KEDUA</b> di Negara Hongkong sebagai House Keeper pada pemberi kerja SINAR JAYA, CO. LTD yang beralamat Flat A 13/F, Golden Plaza 745 Nathan Road Mong Kok Kowloon, Hongkong, dalam waktu paling lama 3 (tiga) bulan sejak diterbitkan daftar nominasi <b>PIHAK KEDUA</b>.</div>
+<div class="ayat">(2) Apabila dalam waktu 3 (tiga) bulan PIHAK KEDUA belum ditempatkan oleh PIHAK KESATU, PIHAK KESATU berkewajiban memberikan penjelasan mengenai alasan keterlambatan penempatan kepada PIHAK KEDUA dan kesanggupan untuk menempatkan dapat diperpanjang untuk waktu paling lama 2 (dua) bulan dan PIHAK KESATU memastikan masa berlaku Jaminan Sosial ketenagakerjaan sebelum bekerja PIHAK KESATU masih berlaku.</div>
+
+<div class="pasal-title">Pasal 2</div>
+<div class="ayat">1. <b>PIHAK KESATU</b> berkewajiban untuk melindungi <b>PIHAK KEDUA</b> sejak ditandatanganinya Perjanjian Penempatan ini sampai dengan Penempatan oleh <b>PIHAK KEDUA</b> sesuai dengan ketentuan yang berlaku.</div>
+<div class="ayat">2. Dalam hal PIHAK KEDUA melakukan perpanjangan perjanjian kerja dengan Pemberi Kerja melalui PIHAK KESATU, kewajiban sebagaimana dimaksud pada ayat (1) tetap berlaku terhadap PIHAK KESATU.</div>
+<div class="ayat">3. <b>PIHAK KESATU</b> berkewajiban menyediakan sarana dan prasarana dalam rangka penempatan dan pelindungan Pekerja Migran Indonesia yang layak.</div>
+
+<div class="pasal-title">Pasal 3</div>
+<p><b>PIHAK KESATU</b> membantu dan memfasilitasi pengurusan dokumen <b>PIHAK KEDUA</b> berupa Perjanjian Kerja, Paspor dan Visa Kerja, Tiket Pesawat, dan Kartu Kepersertaan Jaminan Sosial bagi Pekerja Migran Indonesia, kecuali dokumen awal yang diurus di daerah asal masing-masing oleh <b>PIHAK KEDUA</b>.</p>
+
+<div class="pasal-title">Pasal 4</div>
+<p><b>PIHAK KEDUA</b> sanggup melaksanakan pekerjaan selama masa perjanjian kerja berlangsung (24 bulan) sesuai dengan kesepakatan para pihak.</p>
+
+<div class="pasal-title">Pasal 5</div>
+<p>Batasan biaya tertinggi pada komponen, besaran, serta pembebanan biaya penempatan mengacu pada keputusan kepala badan perlindungan pekerja migran indonesia Nomor 256 Tahun 2023 tentang biaya penempatan pekerja migran indonesia yang di tempatkan oleh perusahaan penempatan pekerja migran Indonesia kepada pemberi kerja perseorangan di hongkong.</p>
+
+<div class="pasal-title">Pasal 6</div>
+<p><b>PIHAK KESATU</b> tidak berkewajiban melakukan pengembalian biaya proses penempatan kepada <b>PIHAK KEDUA</b> apabila <b>PIHAK KEDUA</b> dinyatakan unfit to work (tidak layak bekerja) berdasarkan hasil pemeriksaan kesehatan dan psikologi, mengingat <b>PIHAK KEDUA</b> tidak membayarkan biaya proses penempatan di awal.</p>
+
+<div class="pasal-title">Pasal 7</div>
+<p><b>PIHAK KEDUA</b> diwajibkan mengganti biaya yang telah dikeluarkan <b>PIHAK KESATU</b> apabila <b>PIHAK KEDUA</b> mengundurkan diri (<i>wanprestasi</i>).</p>
+
+<div class="pasal-title">Pasal 8</div>
+<div class="ayat">(1) Perjanjian penempatan ini berlaku untuk jangka waktu 5 (lima) bulan terhitung sejak tanggal ditandatanganinya oleh <b>PARA PIHAK.</b></div>
+<div class="ayat">(2) Apabila dalam waktu 5 (lima) bulan PIHAK KEDUA belum ditempatkan oleh <b>PIHAK KESATU</b>, <b>PIHAK KESATU</b> berkewajiban memberikan penjelasan mengenai alasan keterlambatan penempatan kepada <b>PIHAK KEDUA</b> dan Perjanjian Penempatan dapat diperpanjang dan <b>PIHAK KESATU</b> memastikan masa berlaku Jaminan sosial ketenagakerjaan sebelum bekerja <b>PIHAK KESATU</b> masih berlaku.</div>
+<div class="ayat">(3) <b>PIHAK KEDUA</b> berhak melaporkan permasalahan kepada Dinas yang menyelenggarakan urusan pemerintah bidang ketenagakerjaan di kabupaten/kota untuk mendapatkan penyelesaian dalam hal <b>PIHAK KESATU</b> dengan sengaja tidak memenuhi kewajiban <b>PIHAK KESATU</b> sebagaimana dimaksud pada ayat (1).</div>
+<div class="ayat">(4) Dalam hal <b>PIHAK KESATU</b> terbukti tidak dapat memberikan penjelasan kepastian penempatan <b>PIHAK KEDUA</b>, PIHAK KESATU berkewajiban mengembalikan seluruh biaya PIHAK KEDUA tanpa ada potongan apapun dan Perjanjian Penempatan ini dinyatakan berakhir.</div>
+
+<div class="pasal-title">Pasal 9</div>
+<div class="ayat">1. <b>PIHAK KESATU</b> menjamin <b>PIHAK KEDUA</b> menerima pembayaran atas gaji perbulan sebesar 5,100 HKD sebagaimana diatur dalam perjanjian kerja.</div>
+<div class="ayat">2. Apabila pemberi kerja <b>PIHAK KEDUA</b> tidak mempekerjakan sesuai dengan perjanjian kerja, <b>PIHAK KESATU</b> akan menyelesaikan hubungan kerja antara pemberi kerja dengan <b>PIHAK KEDUA.</b></div>
+
+<div class="pasal-title">Pasal 10</div>
+<p>Perjanjian penempatan ini disepakati dan ditandatangani oleh <b>PARA PIHAK</b>, dibuat rangkap 2 (dua) dalam Bahasa Indonesia diatas kertas bermaterai cukup dan dapat dipertanggungjawabkan kebenarannya oleh masing-masing pihak.</p>
+
+<table class="ttd">
+  <tr>
+    <td><b>PIHAK KEDUA</b></td>
+    <td><b>PIHAK KESATU</b></td>
+  </tr>
+  <tr>
+    <td class="jabatan">
+      <div class="nama">( ${r.nama || '-'} )</div>
+      <div>Pekerja Migran Indonesia</div>
+    </td>
+    <td class="jabatan">
+      <div class="nama">( Tri Wahyu Nurlia, S. Psi )</div>
+      <div>Direktur Utama P3MI</div>
+    </td>
+  </tr>
+</table>
+
+<p style="text-align:center; margin-top:60px;">Mengetahui</p>
+
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
 document.getElementById('addBtn').addEventListener('click', () => openModal(null));
+
 
 document.getElementById('f_hasilmedical').addEventListener('change', (e) => {
   const wrap = document.getElementById('ketMedicalWrap');
   wrap.style.display = (e.target.value === 'Pending' || e.target.value === 'Unfit') ? 'block' : 'none';
+});
+
+document.getElementById('f_statuspaspor').addEventListener('change', (e) => {
+  const wrap = document.getElementById('tglPasporWrap');
+  wrap.style.display = (e.target.value === 'Perpanjang') ? 'block' : 'none';
 });
 
 document.getElementById('compactToggleBtn').addEventListener('click', () => {
@@ -1189,26 +1678,28 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     id: editingId || ('id_' + Date.now()),
     noreg: document.getElementById('f_noreg').value.trim(),
     nama,
-    tgllahir: document.getElementById('f_tgllahir').value,
+    tgllahir: getDateField('f_tgllahir'),
     alamat: document.getElementById('f_alamat').value.trim(),
     kabupaten: document.getElementById('f_kabupaten').value,
     keterangan: document.getElementById('f_keterangan').value.trim(),
     email: document.getElementById('f_email').value.trim(),
     telp: document.getElementById('f_telp').value.trim(),
     pass: document.getElementById('f_pass').value.trim(),
-    daftar: document.getElementById('f_daftar').value,
+    daftar: getDateField('f_daftar'),
     sales: document.getElementById('f_sales').value,
     statusmajikan: document.getElementById('f_statusmajikan').value,
-    ttdmajikan: document.getElementById('f_ttdmajikan').value,
-    mcu: document.getElementById('f_mcu').value,
+    ttdmajikan: getDateField('f_ttdmajikan'),
+    mcu: getDateField('f_mcu'),
     hasilmedical: document.getElementById('f_hasilmedical').value,
     ketmedical: document.getElementById('f_ketmedical').value.trim(),
-    rekom: document.getElementById('f_rekom').value,
+    statuspaspor: document.getElementById('f_statuspaspor').value,
+    tglpaspor: getDateField('f_tglpaspor'),
+    rekom: getDateField('f_rekom'),
     status: newStatus,
-    opp: document.getElementById('f_opp').value,
-    terbang: document.getElementById('f_terbang').value,
+    opp: getDateField('f_opp'),
+    terbang: getDateField('f_terbang'),
     catatan: document.getElementById('f_catatan').value.trim(),
-    ec: document.getElementById('f_ec').value,
+    ec: getDateField('f_ec'),
     selesaiDate
   };
   await sendAction(editingId ? 'update' : 'add', data);
@@ -1313,11 +1804,19 @@ function renderMonthlyTrend() {
   `).join('');
 }
 
+let showingDashboard = true;
+document.getElementById('dashboardToggleBtn').addEventListener('click', () => {
+  showingDashboard = !showingDashboard;
+  document.getElementById('dashboardWrap').style.display = showingDashboard ? 'block' : 'none';
+  if (!showingSummary) document.getElementById('reminderBox').style.display = showingDashboard ? 'block' : 'none';
+  document.getElementById('dashboardToggleBtn').textContent = showingDashboard ? 'Sembunyikan Dashboard' : 'Tampilkan Dashboard';
+});
+
 let showingSummary = false;
 document.getElementById('summaryToggleBtn').addEventListener('click', () => {
   showingSummary = !showingSummary;
   document.getElementById('summaryView').style.display = showingSummary ? 'block' : 'none';
-  document.getElementById('reminderBox').style.display = showingSummary ? 'none' : 'block';
+  document.getElementById('reminderBox').style.display = showingSummary ? 'none' : (showingDashboard ? 'block' : 'none');
   document.querySelector('.table-wrap').style.display = showingSummary ? 'none' : 'block';
   document.querySelector('.toolbar').style.display = showingSummary ? 'none' : 'flex';
   document.getElementById('summaryToggleBtn').textContent = showingSummary ? 'Kembali ke Tabel' : 'Ringkasan';
