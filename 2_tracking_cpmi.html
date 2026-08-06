@@ -176,15 +176,38 @@
 
   /* ===== Kalender kustom (DD/MM/YYYY tetap, tidak ikut bahasa HP) ===== */
   input.date-picker-input { cursor: pointer; background: #fff; }
+  /* ===== Menu dropdown "Dokumen" -- kumpulan semua tombol cetak surat jadi satu ===== */
+  .doc-menu-wrap { position: relative; display: inline-block; }
+  .doc-menu-btn {
+    padding: 4px 9px; font-size: 10.5px; font-weight: 600; border-radius: 6px; border: 1px solid var(--blue-500);
+    background: var(--blue-50); color: var(--navy-800); cursor: pointer; white-space: nowrap;
+  }
+  .doc-menu {
+    display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: #fff;
+    border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 14px 32px -10px rgba(20,84,143,.4);
+    z-index: 20; min-width: 190px; padding: 5px;
+  }
+  .doc-menu.show { display: block; }
+  .doc-menu a {
+    display: block; padding: 7px 10px; font-size: 11.5px; color: var(--navy-900); text-decoration: none;
+    border-radius: 6px; white-space: nowrap; cursor: pointer;
+  }
+  .doc-menu a:hover { background: var(--blue-100); }
+
   .custom-date-picker {
     display: none; position: fixed; z-index: 50; width: 240px; background: #fff; border-radius: 12px;
     box-shadow: 0 20px 44px -12px rgba(20,84,143,.35); border: 1px solid var(--border); padding: 10px;
     font-family: 'Inter', sans-serif; max-height: calc(100vh - 16px); overflow-y: auto;
   }
-  .cdp-header { display: flex; gap: 6px; margin-bottom: 8px; }
+  .cdp-header { display: flex; gap: 4px; margin-bottom: 8px; align-items: center; }
   .cdp-header select {
-    flex: 1; padding: 6px 4px; border-radius: 7px; border: 1px solid var(--border); font-size: 12px; background: var(--blue-50);
+    flex: 1; padding: 6px 2px; border-radius: 7px; border: 1px solid var(--border); font-size: 11.5px; background: var(--blue-50); min-width: 0;
   }
+  .cdp-arrow {
+    flex-shrink: 0; width: 26px; height: 28px; border-radius: 7px; border: 1px solid var(--border);
+    background: #fff; color: var(--navy-800); font-size: 13px; font-weight: 700; cursor: pointer; padding: 0;
+  }
+  .cdp-arrow:hover { background: var(--blue-100); }
   .cdp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
   .cdp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
   .cdp-days span { text-align: center; font-size: 12px; padding: 6px 0; border-radius: 6px; cursor: pointer; }
@@ -546,7 +569,7 @@
     <tr>
       <th>No.</th><th class="col-extra">No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Tanggal Lahir</th><th class="col-extra">Alamat</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
       <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Medical</th><th>Rekom ID</th><th>Paspor</th>
-      <th>Status</th><th>Tanggal EC</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th></th>
+      <th>Status</th><th>Tanggal EC</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th>Dokumen</th><th></th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
@@ -590,8 +613,10 @@
 
 <div class="custom-date-picker" id="customDatePicker">
   <div class="cdp-header">
+    <button type="button" class="cdp-arrow" onclick="cdpGeserBulan(-1)">&lsaquo;</button>
     <select id="cdpMonthSel"></select>
     <select id="cdpYearSel"></select>
+    <button type="button" class="cdp-arrow" onclick="cdpGeserBulan(1)">&rsaquo;</button>
   </div>
   <div class="cdp-weekdays"><span>Sn</span><span>Sl</span><span>Rb</span><span>Km</span><span>Jm</span><span>Sb</span><span>Mg</span></div>
   <div class="cdp-days" id="cdpDays"></div>
@@ -787,6 +812,15 @@ function renderCdp() {
   document.getElementById('cdpDays').innerHTML = html;
 }
 
+// Tombol panah ‹ › -- cara alternatif pindah bulan yang pasti berfungsi,
+// selain lewat dropdown bulan/tahun.
+window.cdpGeserBulan = function(delta) {
+  cdpViewMonth += delta;
+  if (cdpViewMonth < 0) { cdpViewMonth = 11; cdpViewYear -= 1; }
+  if (cdpViewMonth > 11) { cdpViewMonth = 0; cdpViewYear += 1; }
+  renderCdp();
+};
+
 function openDatePicker(inputEl) {
   cdpTargetId = inputEl.id;
   const iso = inputEl.dataset.iso;
@@ -965,6 +999,42 @@ function pasporCell(r) {
   return '-';
 }
 
+// Kolom Dokumen: satu tombol dropdown berisi semua pilihan surat yang bisa dicetak untuk CPMI ini,
+// supaya tidak ada lagi tombol "Cetak Surat" yang berserakan di banyak kolom berbeda.
+function dokumenCell(r) {
+  const opsi = [
+    { label: '📄 Surat Pengantar Kades', fn: 'printSuratPengantar' },
+    { label: '📄 Perjanjian Penempatan (PP)', fn: 'printPP' },
+  ];
+  if (r.hasilmedical === 'Pending' || r.hasilmedical === 'Unfit') {
+    opsi.push({ label: '📄 SP Fit (Pernyataan Medical)', fn: 'printSPFit' });
+  }
+  opsi.push({ label: '📄 Permohonan Paspor', fn: 'printPermohonanPaspor' });
+  opsi.push({ label: '📄 Surat Dirut', fn: 'printSuratDirut' });
+
+  const daftarLink = opsi.map(o => `<a onclick="${o.fn}('${r.id}'); tutupDocMenu();">${o.label}</a>`).join('');
+  return `
+    <div class="doc-menu-wrap">
+      <button class="doc-menu-btn" onclick="toggleDocMenu(event, '${r.id}')">📄 Dokumen ▾</button>
+      <div class="doc-menu" id="docMenu_${r.id}">${daftarLink}</div>
+    </div>
+  `;
+}
+
+window.toggleDocMenu = function(e, id) {
+  e.stopPropagation();
+  const target = document.getElementById('docMenu_' + id);
+  const sedangTerbuka = target.classList.contains('show');
+  document.querySelectorAll('.doc-menu.show').forEach(m => m.classList.remove('show'));
+  if (!sedangTerbuka) target.classList.add('show');
+};
+window.tutupDocMenu = function() {
+  document.querySelectorAll('.doc-menu.show').forEach(m => m.classList.remove('show'));
+};
+document.addEventListener('click', () => {
+  document.querySelectorAll('.doc-menu.show').forEach(m => m.classList.remove('show'));
+});
+
 function daysSince(dateStr) {
   if (!dateStr) return null;
   const then = new Date(dateStr + 'T00:00:00');
@@ -986,11 +1056,18 @@ function isEcOverdue(r) {
   return r.status === 'selesai' && !r.ec && d !== null && d >= 7;
 }
 
+// Pengingat 3: sudah 2 bulan (60 hari) sejak EC, tapi belum ada tanggal OPP
+function isOppOverdue(r) {
+  const d = daysSince(r.ec);
+  return r.ec && !r.opp && d !== null && d >= 60;
+}
+
 function renderReminders() {
   const mcuList = records.filter(isMcuOverdue);
   const ecList = records.filter(isEcOverdue);
+  const oppList = records.filter(isOppOverdue);
   const box = document.getElementById('reminderBox');
-  if (mcuList.length === 0 && ecList.length === 0) {
+  if (mcuList.length === 0 && ecList.length === 0 && oppList.length === 0) {
     box.innerHTML = '';
     return;
   }
@@ -1003,6 +1080,11 @@ function renderReminders() {
   if (ecList.length > 0) {
     html += `<div class="reminder-box"><h4>⚠ Sudah 7+ hari status Selesai, belum masuk EC (${ecList.length})</h4><ul>` +
       ecList.map(r => `<li>${r.nama} — Selesai ${daysSince(r.selesaiDate)} hari lalu</li>`).join('') +
+      `</ul></div>`;
+  }
+  if (oppList.length > 0) {
+    html += `<div class="reminder-box"><h4>⚠ Sudah 2 bulan+ sejak EC, belum masuk OPP (${oppList.length})</h4><ul>` +
+      oppList.map(r => `<li>${r.nama} — EC ${daysSince(r.ec)} hari lalu</li>`).join('') +
       `</ul></div>`;
   }
   box.innerHTML = html;
@@ -1045,7 +1127,7 @@ function renderDashboard() {
   const berjalan = records.filter(r => r.status === 'berjalan').length;
   const selesai = records.filter(r => r.status === 'selesai').length;
   const batal = records.filter(r => r.status === 'batal').length;
-  const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r)).length;
+  const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r)).length;
   const penempatan = records.filter(r => !!r.terbang).length;
 
   document.getElementById('statTotal').textContent = total;
@@ -1084,7 +1166,7 @@ function render() {
   if (statusFilter === 'berjalan') filtered = filtered.filter(r => r.status === 'berjalan');
   else if (statusFilter === 'selesai') filtered = filtered.filter(r => r.status === 'selesai');
   else if (statusFilter === 'batal') filtered = filtered.filter(r => r.status === 'batal');
-  else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r));
+  else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r));
   else if (statusFilter === 'penempatan') filtered = filtered.filter(r => !!r.terbang);
   lastFiltered = filtered;
   const body = document.getElementById('tableBody');
@@ -1097,10 +1179,10 @@ function render() {
   const pageItems = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
   if (filtered.length === 0) {
-    body.innerHTML = '<tr><td colspan="23" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
+    body.innerHTML = '<tr><td colspan="24" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
   } else {
     body.innerHTML = pageItems.map((r, i) => {
-      const alert = isMcuOverdue(r) || isEcOverdue(r);
+      const alert = isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r);
       return `
       <tr class="${alert ? 'row-alert' : ''}">
         <td>${startIdx + i + 1}</td>
@@ -1112,19 +1194,20 @@ function render() {
         <td class="col-extra">${r.keterangan || '-'}</td>
         <td class="col-extra">${r.email || '-'}<br/>${r.telp || '-'}</td>
         <td class="col-extra" style="font-family:monospace; font-size:10px;">${r.pass || '-'}</td>
-        <td>${fmtDate(r.daftar)}<br/><button onclick="printSuratPengantar('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">Cetak Surat</button></td>
+        <td>${fmtDate(r.daftar)}</td>
         <td>${r.sales || '-'}</td>
         <td>${r.statusmajikan || '-'}</td>
         <td class="col-extra">${fmtDate(r.ttdmajikan)}</td>
         <td>${fmtDate(r.mcu)}</td>
         <td>${medicalCell(r)}</td>
-        <td>${fmtDate(r.rekom)}<br/><button onclick="printPP('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">Cetak PP</button></td>
+        <td>${fmtDate(r.rekom)}</td>
         <td>${pasporCell(r)}</td>
-        <td>${statusBadge(r.status)}${r.status === 'selesai' ? `<br/><button onclick="kirimWaSales('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">📞 Hubungi Sales</button>` : ''}</td>
+        <td>${statusBadge(r.status)}${r.status === 'selesai' ? `<br/><span style="font-size:10px; color:var(--muted);">Selesai: ${fmtDate(r.selesaiDate)}</span><br/><button onclick="kirimWaSales('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">📞 Hubungi Sales</button>` : ''}</td>
         <td>${fmtDate(r.ec)}</td>
         <td class="col-extra">${fmtDate(r.opp)}</td>
         <td class="col-extra">${fmtDate(r.terbang)}</td>
         <td class="col-extra">${r.catatan || '-'}</td>
+        <td>${dokumenCell(r)}</td>
         <td class="actions">
           <button onclick="editRecord('${r.id}')">Edit</button>
           <button onclick="kirimWaManual('${r.id}')">Kirim WA</button>
@@ -1212,13 +1295,17 @@ window.deleteRecord = async function(id) {
 // ===== Kirim WA (semi-otomatis lewat wa.me) =====
 // Merapikan nomor telepon jadi format yang dikenali wa.me.
 // Kalau nomor diawali angka 0 (format lokal Indonesia, mis. 0812xxxx), diganti jadi 62812xxxx.
-// Kalau tidak diawali 0 (berarti sudah pakai kode negaranya sendiri, misal 852xxxx untuk
+// Kalau diawali "00" (kode akses internasional, mis. 00852xxxx), awalan 00-nya dibuang saja
+// (jadi 852xxxx) -- ini yang sering dipakai staf untuk menulis nomor luar negeri seperti Hong Kong.
+// Kalau tidak diawali 0 sama sekali (sudah pakai kode negaranya sendiri, misal 852xxxx untuk
 // Hong Kong atau 60xxxx untuk Malaysia), nomor dipakai apa adanya TANPA ditambah kode Indonesia.
 function formatNomorWa(telp) {
   if (!telp) return null;
   let digits = telp.replace(/[^0-9]/g, '');
   if (!digits) return null;
-  if (digits.startsWith('0')) {
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  } else if (digits.startsWith('0')) {
     digits = '62' + digits.slice(1);
   }
   return digits;
@@ -1517,12 +1604,13 @@ window.printPP = function(id) {
   h1 { text-align: center; font-size: 14pt; font-weight: 700; margin: 0 0 16px; }
   p { margin: 0 0 12px; text-align: justify; }
   .field-row { margin: 0 0 4px 36px; }
-  .field-row b { display: inline-block; width: 80px; }
+  .field-row b { display: inline-block; width: 95px; white-space: nowrap; vertical-align: top; }
   .pasal-title { font-weight: 700; text-align: center; margin: 18px 0 8px; }
   .ayat { margin: 0 0 10px 24px; text-align: justify; }
   table.ttd { width: 100%; border-collapse: collapse; margin-top: 40px; }
   table.ttd td { width: 50%; text-align: center; vertical-align: top; padding: 0 20px; border: none; }
-  table.ttd .jabatan { margin-top: 100px; }
+  table.ttd .jabatan { margin-top: 30px; }
+  .materai-box { height: 100px; }
   table.ttd .nama { text-decoration: underline; font-weight: 700; }
   [contenteditable="true"]:hover { outline: 1px dashed #9ad2f2; outline-offset: 2px; }
   [contenteditable="true"]:focus { outline: 1px solid #1f5c96; outline-offset: 2px; background: #f7fbfe; }
@@ -1616,10 +1704,12 @@ window.printPP = function(id) {
   </tr>
   <tr>
     <td class="jabatan">
+      <div class="materai-box"></div>
       <div class="nama">( ${r.nama || '-'} )</div>
       <div>Pekerja Migran Indonesia</div>
     </td>
     <td class="jabatan">
+      <div class="materai-box"></div>
       <div class="nama">( Tri Wahyu Nurlia, S. Psi )</div>
       <div>Direktur Utama P3MI</div>
     </td>
@@ -1627,6 +1717,300 @@ window.printPP = function(id) {
 </table>
 
 <p style="text-align:center; margin-top:60px;">Mengetahui</p>
+
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+// ===== Cetak SP Fit (Surat Pernyataan) — muncul kalau Hasil Medical Pending/Unfit =====
+window.printSPFit = function(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+
+  const keteranganMedical = r.ketmedical ? r.ketmedical : (r.hasilmedical || 'Pending');
+
+  const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Surat Pernyataan - ${r.nama}</title>
+<style>
+  @page { size: A4; margin: 1.2cm 2.2cm 2cm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 12.5pt; color: #000; margin: 0; padding: 0 6mm; line-height: 1.5; }
+  .kop-space { height: 4cm; }
+  .letter-title { text-align: center; font-weight: 700; text-decoration: underline; font-size: 13.5pt; margin-bottom: 18px; }
+  p { margin: 0 0 12px; text-align: justify; }
+  .field-row { margin: 0 0 4px 36px; }
+  .field-row b { display: inline-block; width: 92px; white-space: nowrap; vertical-align: top; }
+  .signature-block { margin-top: 30px; }
+  .no-print {
+    position: fixed; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
+  .no-print button {
+    padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 8px;
+    border: none; background: #14548f; color: #fff; cursor: pointer;
+  }
+  @media print {
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print"><button onclick="window.print()">🖨️ Cetak / Simpan PDF</button></div>
+
+<div class="kop-space"></div>
+
+<div class="letter-title">SURAT PERNYATAAN</div>
+
+<p>Yang bertanda tangan dibawah ini :</p>
+<div class="field-row"><b>Nama</b> : <b>TRI WAHYU NURLIA</b></div>
+<div class="field-row"><b>Jabatan</b> : Director PT. PARCO LAUT</div>
+<div class="field-row"><b>Alamat</b> : Ds. Sukorejo Rt. 004 Rw. 001 No. 75</div>
+<div class="field-row" style="margin-left:128px;">Kec. Buduran Kab. Sidoarjo, Jawa timur.</div>
+
+<p style="margin-top:16px;">Menerangkan bahwa CTKI di bawah ini :</p>
+<div class="field-row"><b>Nama</b> : ${r.nama || '-'}</div>
+<div class="field-row"><b>Tgl Lahir</b> : ${fmtDate(r.tgllahir)}</div>
+<div class="field-row"><b>Alamat</b> : ${r.alamat || '-'}</div>
+
+<p style="margin-top:16px;">Sehubungan dengan hasil medical ${r.nama || '-'} dengan adanya <b>${keteranganMedical}</b>. Maka dengan ini kami minta untuk di FIT kan. Jika terjadi sesuatu hal di kemudian hari kami tidak menuntut KLINIK UTAMA MEDISSINA.</p>
+
+<p>Demikian Surat pernyataan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+
+<div class="signature-block">
+  <p>Hormat kami,</p>
+  <p style="margin-top:4px;"><b>PT. PARCO LAUT</b></p>
+  <p style="margin-top:70px; margin-bottom:0;"><b style="text-decoration:underline;">TRI WAHYU NURLIA, S. Psi</b></p>
+  <p style="margin-top:0;">Direktur</p>
+</div>
+
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+// ===== Cetak Surat Permohonan Pembuatan Paspor =====
+window.printPermohonanPaspor = function(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+
+  const bulanList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const now = new Date();
+  const tanggalSurat = `${now.getDate()} ${bulanList[now.getMonth()]} ${now.getFullYear()}`;
+  const romawi = bulanRomawi(now.getMonth());
+  const tahunSekarang = now.getFullYear();
+
+  const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Permohonan Paspor - ${r.nama}</title>
+<style>
+  @page { size: A4; margin: 2.2cm 2.2cm 2cm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 12.5pt; color: #000; margin: 0; padding: 0 6mm; line-height: 1.5; }
+  .kop-space { height: 2cm; }
+  p { margin: 0 0 10px; text-align: justify; }
+  .field-row { margin: 0 0 4px; }
+  .field-row b { display: inline-block; width: 90px; white-space: nowrap; vertical-align: top; }
+  table.data { width: 100%; border-collapse: collapse; margin: 14px 0 18px; }
+  table.data th, table.data td { border: 1px solid #000; padding: 6px 8px; font-size: 12pt; }
+  table.data th { text-align: center; font-weight: 700; }
+  .surat-nomor { background: #fff3cd; padding: 1px 4px; border-radius: 3px; }
+  .no-print {
+    position: fixed; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
+  .no-print button {
+    padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 8px;
+    border: none; background: #14548f; color: #fff; cursor: pointer;
+  }
+  .no-print .hint {
+    background: #fff3cd; color: #7a5c00; font-size: 11.5px; padding: 8px 12px; border-radius: 8px; max-width: 240px; text-align: right;
+  }
+  [contenteditable="true"]:hover { outline: 1px dashed #9ad2f2; outline-offset: 2px; }
+  [contenteditable="true"]:focus { outline: 1px solid #1f5c96; outline-offset: 2px; background: #f7fbfe; }
+  @media print {
+    .no-print { display: none !important; }
+    .surat-nomor { background: none; }
+    [contenteditable="true"]:hover, [contenteditable="true"]:focus { outline: none; background: none; }
+  }
+</style>
+</head>
+<body contenteditable="true">
+
+<div class="no-print" contenteditable="false">
+  <div class="hint">✏️ Seluruh isi surat ini bisa langsung diedit (klik di teks mana pun) sebelum dicetak. Jangan lupa isi nomor surat yang masih ditandai kuning.</div>
+  <button onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+</div>
+
+<div class="kop-space" contenteditable="false"></div>
+
+<p style="text-align:right;">Indramayu, ${tanggalSurat}</p>
+
+<div class="field-row"><b>Nomor</b> : <span class="surat-nomor">___</span>/PASS/PL/${romawi}/${tahunSekarang}</div>
+<div class="field-row"><b>Lampiran</b> : 1 (Satu) Set</div>
+<div class="field-row"><b>Perihal</b> : Permohonan Pembuatan Paspor</div>
+
+<p style="margin-top:18px;">Kepada Yth :<br/>
+Kepala Kantor Imigrasi Kelas I<br/>
+TPI Cirebon UP.LTSA Indramayu<br/>
+di<br/>
+&emsp;&emsp;tempat</p>
+
+<p style="margin-top:14px;">Dengan Hormat,</p>
+<p>Bersama ini, kami mengajukan permohonan pembuatan Paspor Calon PMI sebanyak 1 orang dengan negara tujuan <b>HONG KONG</b>. Adapun data Calon PMI yang kami ajukan adalah sebagai berikut:</p>
+
+<table class="data">
+  <tr>
+    <th style="width:6%;">No.</th>
+    <th style="width:26%;">Nama</th>
+    <th style="width:30%;">Tempat/Tanggal Lahir</th>
+    <th>Alamat</th>
+  </tr>
+  <tr>
+    <td style="text-align:center;">1</td>
+    <td>${r.nama || '-'}</td>
+    <td>INDRAMAYU, ${fmtDate(r.tgllahir)}</td>
+    <td>${r.alamat || '-'}</td>
+  </tr>
+</table>
+
+<p>Sehubungan dengan hal tersebut, kami mohon agar dapat diterbitkannya paspor guna proses selanjutnya.</p>
+<p>Demikian permohonan ini kami buat, atas perhatiannya kami sampaikan terima kasih.</p>
+
+<p style="margin-top:50px;"><b>PT. PARCO LAUT</b></p>
+<p style="margin-top:70px; margin-bottom:0;"><b style="text-decoration:underline;">Tri Wahyu Nurlia, S.Psi</b></p>
+<p>Direktur</p>
+
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+// ===== Cetak Surat Dirut (Surat Pernyataan Pembiayaan + Declaration Agency HK) =====
+// Tempat Lahir dan No. Paspor sengaja dikosongkan (titik-titik) karena belum ada sumber
+// datanya di sistem -- tinggal diisi manual sebelum dicetak (dokumen ini bisa diedit langsung).
+window.printSuratDirut = function(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+
+  const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Surat Dirut - ${r.nama}</title>
+<style>
+  @page { size: A4; margin: 2.2cm 2.2cm 2cm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 12.5pt; color: #000; margin: 0; padding: 0 6mm; line-height: 1.5; }
+  .kop-space { height: 2cm; }
+  .letter-title { text-align: center; font-weight: 700; margin-bottom: 18px; }
+  p { margin: 0 0 12px; text-align: justify; }
+  .field-row { margin: 0 0 4px 36px; }
+  .field-row b { display: inline-block; width: 150px; white-space: nowrap; vertical-align: top; }
+  .page-break { page-break-before: always; }
+  .no-print {
+    position: fixed; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
+  .no-print button {
+    padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 8px;
+    border: none; background: #14548f; color: #fff; cursor: pointer;
+  }
+  .no-print .hint {
+    background: #fff3cd; color: #7a5c00; font-size: 11.5px; padding: 8px 12px; border-radius: 8px; max-width: 240px; text-align: right;
+  }
+  .isi-manual { background: #fff3cd; padding: 0 4px; border-radius: 3px; }
+  [contenteditable="true"]:hover { outline: 1px dashed #9ad2f2; outline-offset: 2px; }
+  [contenteditable="true"]:focus { outline: 1px solid #1f5c96; outline-offset: 2px; background: #f7fbfe; }
+  @media print {
+    .no-print { display: none !important; }
+    .isi-manual { background: none; }
+    [contenteditable="true"]:hover, [contenteditable="true"]:focus { outline: none; background: none; }
+  }
+</style>
+</head>
+<body contenteditable="true">
+
+<div class="no-print" contenteditable="false">
+  <div class="hint">✏️ Seluruh isi surat ini bisa langsung diedit sebelum dicetak. Bagian Tempat Lahir dan No. Paspor (ditandai kuning) belum ada di sistem, tolong isi manual dulu.</div>
+  <button onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+</div>
+
+<div class="kop-space" contenteditable="false"></div>
+
+<div class="letter-title">SURAT PERNYATAAN</div>
+
+<p>Yang bertanda tangan dibawah ini :</p>
+<div class="field-row"><b>Nama P3MI</b> : PT Parco Laut</div>
+<div class="field-row"><b>Nama Direktur</b> : Tri Wahyu Nurlia, S.Psi</div>
+
+<p style="margin-top:16px;">Dengan surat ini menyatakan bahwa :</p>
+<div class="field-row"><b>Nama CPMI</b> : ${r.nama || '-'}</div>
+<div class="field-row"><b>Tempat/Tanggal Lahir</b> : <span class="isi-manual">...................</span>, ${fmtDate(r.tgllahir)}</div>
+<div class="field-row"><b>No. Paspor</b> : <span class="isi-manual">...................</span></div>
+<div class="field-row"><b>Alamat</b> : ${r.alamat || '-'}</div>
+
+<p style="margin-top:16px;">Telah di lunasi pembiayaan untuk proses ke Negara tujuan Hong Kong oleh majikan sebesar Rp 14.530.000,- ke Rekening di bawah ini :</p>
+<div class="field-row"><b>Nama Rekening</b> : Tri Wahyu Nurlia</div>
+<div class="field-row"><b>No. Rekening</b> : 0881088108</div>
+<div class="field-row"><b>Nama BANK</b> : Bank Negara Indonesia (BNI)</div>
+
+<p style="margin-top:16px;">Dengan ini perusahaan kami menjamin CPMI bekerja di luar negeri tidak akan mengalami potongan gaji. Berikut kami sertakan bukti setoran dari Majikan.</p>
+<p>Demikian surat pernyataan ini kami buat dengan sebenar-benarnya dan dapat di jadikan sebagai bukti yang sah, kalau terjadi penyimpangan di kemudian hari, maka kami bertanggung jawab. atas perhatian dan kerja samanya kami ucapkan terima kasih.</p>
+
+<p style="margin-top:20px;">Yang menyatakan</p>
+<table style="width:100%; margin-top:60px;">
+  <tr>
+    <td style="width:50%; vertical-align:top;">
+      <b style="text-decoration:underline;">Tri Wahyu Nurlia, S.Psi</b><br/>
+      Direktur Utama
+    </td>
+    <td style="width:50%; vertical-align:top;">
+      ${r.nama || '-'}<br/>
+      Calon Pekerja Migran Indonesia
+    </td>
+  </tr>
+</table>
+
+<div class="page-break"></div>
+
+<p>To. Director of BP3MI<br/>LTSA Indramayu west Java<br/>Indonesian</p>
+
+<p style="margin-top:16px;">Dear Sir/Madam,</p>
+<p>I, The Undersigned :</p>
+<div class="field-row"><b>Name</b> : Mrs. Liu Wijayanti</div>
+<div class="field-row"><b>Position</b> : Director</div>
+<div class="field-row"><b>Agency</b> : Sinar Jaya Co. Limited</div>
+<div class="field-row"><b>Address</b> : Flat A, 13th Floor, Golden Plaza, 745 Nathan Road,</div>
+<div class="field-row" style="margin-left:186px;">Mong Kok Kowloon Hong Kong.</div>
+
+<p style="margin-top:16px;">Declare that :</p>
+<div class="field-row"><b>Name</b> : ${r.nama || '-'}</div>
+<div class="field-row"><b>Date of birth</b> : <span class="isi-manual">...................</span>, ${fmtDate(r.tgllahir)}</div>
+<div class="field-row"><b>No. paspor</b> : <span class="isi-manual">...................</span></div>
+<div class="field-row"><b>Address</b> : ${r.alamat || '-'}</div>
+
+<p style="margin-top:16px;">Declare that financing has been paid for processing to the destination country of Hong Kong and our company guarantees the Prospective Indonesian Migrant Workers above, do not experience a cut in salary from employer or agency. Here we include proof of deposit from the employer.</p>
+<p>Thus we make this statement letter in truth and can be made as valid evidence, if irregularities occur in the future, then we are responsible answer.</p>
+<p>Thank you very much for your kind attention and consideration.</p>
+
+<p style="margin-top:16px;">Your Sincerely</p>
+<p style="margin-top:60px;"><b>Mrs. Liu Wijayanti</b></p>
 
 </body>
 </html>`;
