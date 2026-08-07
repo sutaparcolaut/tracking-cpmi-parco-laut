@@ -7,10 +7,10 @@
   "scope": "./4_update_cepat.html",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f1f7fc",
-  "theme_color": "#163a5c",
+  "background_color": "#eaf6fe",
+  "theme_color": "#020610",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-update-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-update-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
