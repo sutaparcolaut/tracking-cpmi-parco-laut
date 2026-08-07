@@ -541,6 +541,8 @@
 </div>
 </div>
 
+<div id="reminderBox"></div>
+
 <div class="toolbar">
   <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
     <div class="search-wrap">
@@ -558,8 +560,6 @@
     <button class="primary" id="addBtn">+ Tambah CPMI</button>
   </div>
 </div>
-
-<div id="reminderBox"></div>
 
 <div id="statusMsg">Memuat data...</div>
 
@@ -710,10 +710,10 @@
       <option value="selesai">Proses selesai</option>
       <option value="batal">Batal / mundur</option>
     </select>
+    <label>Tanggal EC</label><input id="f_ec" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Tanggal OPP</label><input id="f_opp" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Tanggal Terbang</label><input id="f_terbang" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Catatan Selama Penempatan</label><input id="f_catatan" type="text" />
-    <label>Tanggal EC</label><input id="f_ec" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
       <button id="cancelBtn">Batal</button>
       <button class="primary" id="saveBtn">Simpan</button>
