@@ -189,6 +189,17 @@
   .bubble.bot.warn { border-color: rgba(251,191,36,.4); background: rgba(50,40,10,.85); color: #fcd34d; }
   .bubble.hint { align-self: center; font-size: 11px; color: #7fa8c9; background: transparent; }
 
+  .nama-suggest {
+    display: none; gap: 6px; padding: 0 12px 8px; flex-wrap: wrap; position: relative; z-index: 2;
+  }
+  .nama-suggest.show { display: flex; }
+  .nama-suggest .suggest-label { width: 100%; font-size: 10px; color: #7fa8c9; font-weight: 700; letter-spacing: .04em; margin-bottom: 2px; }
+  .nama-suggest button {
+    border: 1px solid rgba(56,189,248,.45); background: rgba(56,189,248,.1); color: #7ee6f7; font-size: 12px;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer; font-weight: 600; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .nama-suggest button:active { background: rgba(56,189,248,.24); }
   .quick-chips { display: flex; gap: 6px; padding: 0 12px 8px; flex-wrap: wrap; position: relative; z-index: 1; }
   .quick-chips button {
     border: 1px solid rgba(56,189,248,.35); background: rgba(15,28,52,.85); color: #38bdf8; font-size: 11.5px;
@@ -547,6 +558,8 @@
     <span id="tanggalHint"></span>
   </div>
 
+  <div id="namaSuggest" class="nama-suggest"></div>
+
   <div class="input-row">
     <input id="chatInput" type="text" placeholder="Contoh: Danenti sudah MCU" autocomplete="off" />
     <button id="micBtn" type="button" title="Ketik pakai suara" style="display:none;">
@@ -613,29 +626,34 @@ function setupVoiceCommand() {
   });
 }
 
-function sapaanSuara() {
+// Fungsi suara umum -- dipakai untuk sapaan pembuka maupun konfirmasi setelah data tersimpan.
+// Memakai suara Bahasa Indonesia (logat Indonesia) dari mesin text-to-speech bawaan HP.
+function ucapkan(teks) {
   try {
     if (!('speechSynthesis' in window)) return;
-    const teks = "Hello Suta, I'm Jarvis. I'm ready to assist you with your work.";
     const utter = new SpeechSynthesisUtterance(teks);
-    utter.lang = 'en-US';
-    utter.pitch = 0.9;   // sedikit rendah & tenang, kesan asisten AI ala Jarvis
-    utter.rate = 1;
+    utter.lang = 'id-ID';
+    utter.rate = 0.96;   // sedikit lebih pelan -> terdengar lebih luwes, tidak buru-buru
+    utter.pitch = 1;     // nada NORMAL/alami (jangan diubah-ubah, karena bikin suara jadi kaku)
     utter.volume = 1;
 
     const pasangSuaraLaluBicara = () => {
       const daftarSuara = speechSynthesis.getVoices();
-      const suaraEnglish = daftarSuara.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
-      // Nama-nama suara laki-laki yang umum dipakai di berbagai HP/OS (Android, iOS, Windows)
-      const namaLakiLaki = /male|david|daniel|james|mark|alex|fred|tom|guy|ryan|eric|george|matthew|christopher/i;
-      const suaraLaki = suaraEnglish.find(v => namaLakiLaki.test(v.name) && !/female/i.test(v.name));
-      const suaraEn = suaraLaki
-        || suaraEnglish.find(v => v.lang === 'en-US')
-        || suaraEnglish[0];
-      if (suaraEn) utter.voice = suaraEn;
-      // Nada dibuat lebih rendah supaya kedengaran maskulin, terutama kalau HP cuma
-      // punya 1 suara (biasanya perempuan) dan tidak ketemu suara laki-laki eksplisit.
-      utter.pitch = suaraLaki ? 0.9 : 0.55;
+      // Cari suara Bahasa Indonesia -- beberapa HP menandainya dengan cara berbeda-beda
+      const suaraIndonesia = daftarSuara.filter(v =>
+        (v.lang && (v.lang === 'id-ID' || v.lang === 'id_ID' || v.lang.toLowerCase().startsWith('id')))
+        || /indonesia/i.test(v.name)
+      );
+
+      // Prioritas: suara Indonesia kualitas tinggi (biasanya yang online/network, bukan localService)
+      // karena logatnya jauh lebih natural dibanding suara offline bawaan.
+      const suaraNatural = suaraIndonesia.find(v => v.localService === false);
+      const suaraDipakai = suaraNatural || suaraIndonesia[0];
+
+      if (suaraDipakai) {
+        utter.voice = suaraDipakai;
+        utter.lang = suaraDipakai.lang;
+      }
       speechSynthesis.cancel();
       speechSynthesis.speak(utter);
     };
@@ -647,6 +665,10 @@ function sapaanSuara() {
       speechSynthesis.onvoiceschanged = pasangSuaraLaluBicara;
     }
   } catch (e) { /* diamkan kalau HP tidak mendukung text-to-speech */ }
+}
+
+function sapaanSuara() {
+  ucapkan('Hi Suta, saya siap membantu.');
 }
 
 function showChat() {
@@ -739,6 +761,62 @@ function appendQuick(text) {
   input.focus();
 }
 
+// ===== Saran nama CPMI otomatis saat mengetik =====
+// Menampilkan nama-nama yang cocok dengan kata pertama yang sedang diketik,
+// supaya tidak perlu ingat/ketik nama lengkap dan menghindari salah nama.
+function tampilkanSaranNama() {
+  const input = document.getElementById('chatInput');
+  const box = document.getElementById('namaSuggest');
+  const teks = input.value.trim();
+
+  if (!teks || records.length === 0) {
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+
+  // Ambil bagian awal yang diketik sebagai calon nama (maksimal 3 kata pertama,
+  // karena nama CPMI bisa terdiri dari beberapa kata).
+  const kataKunci = teks.toLowerCase().split(/\s+/).slice(0, 3).join(' ');
+
+  const cocok = records
+    .filter(r => r.nama && r.nama.toLowerCase().includes(kataKunci.split(/\s+/)[0]))
+    .slice(0, 8);
+
+  // Kalau sudah ada nama yang PERSIS cocok penuh, tidak perlu tampilkan saran lagi
+  const sudahLengkap = records.some(r => r.nama && teks.toLowerCase().startsWith(r.nama.toLowerCase()));
+
+  if (cocok.length === 0 || sudahLengkap) {
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+
+  box.innerHTML = '<div class="suggest-label">Maksud Anda:</div>' +
+    cocok.map(r => `<button type="button" onclick="pilihSaranNama('${r.nama.replace(/'/g, "\\'")}')">${r.nama}</button>`).join('');
+  box.classList.add('show');
+}
+
+// Ketika salah satu saran nama ditap: ganti bagian nama yang diketik dengan nama lengkapnya,
+// sisa kalimat (misal "sudah MCU") tetap dipertahankan.
+window.pilihSaranNama = function(namaLengkap) {
+  const input = document.getElementById('chatInput');
+  const kata = input.value.trim().split(/\s+/);
+  const namaKata = namaLengkap.split(/\s+/);
+
+  // Buang kata-kata awal yang merupakan bagian dari nama yang sedang diketik
+  let jumlahDibuang = 0;
+  for (let i = 0; i < Math.min(kata.length, namaKata.length); i++) {
+    if (namaLengkap.toLowerCase().includes(kata[i].toLowerCase())) jumlahDibuang++;
+    else break;
+  }
+  const sisa = kata.slice(jumlahDibuang).join(' ');
+
+  input.value = namaLengkap + (sisa ? ' ' + sisa : ' ');
+  document.getElementById('namaSuggest').classList.remove('show');
+  input.focus();
+};
+
 function fmtTanggalIndo(iso) {
   const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   const d = new Date(iso + 'T00:00:00');
@@ -798,6 +876,7 @@ async function handleSend() {
   if (!text) return;
   addUserBubble(text);
   input.value = '';
+  document.getElementById('namaSuggest').classList.remove('show');
 
   const parsed = parseQuickUpdate(text);
 
@@ -865,15 +944,18 @@ async function terapkanUpdate(record, parsed) {
   const before = Object.assign({}, record);
   const updated = Object.assign({}, record);
   let pesanBerhasil = '';
+  let labelSuara = ''; // versi ringkas untuk dibacakan suara
 
   if (parsed.field) {
     if (Object.prototype.hasOwnProperty.call(parsed.field, 'value')) {
       updated[parsed.field.field] = parsed.field.value;
       if (parsed.field.extraField) updated[parsed.field.extraField] = today;
       pesanBerhasil = `${parsed.field.label} diubah jadi "${parsed.field.value}"` + (parsed.field.extraField ? ` (tanggal ${fmtTanggalIndo(today)})` : '');
+      labelSuara = parsed.field.label;
     } else {
       updated[parsed.field.field] = today;
       pesanBerhasil = `${parsed.field.label} diisi tanggal ${fmtTanggalIndo(today)}`;
+      labelSuara = parsed.field.label;
     }
   }
   if (parsed.status) {
@@ -881,6 +963,7 @@ async function terapkanUpdate(record, parsed) {
     if (parsed.status.status === 'selesai' && !updated.selesaiDate) updated.selesaiDate = today;
     if (parsed.status.status !== 'selesai') updated.selesaiDate = '';
     pesanBerhasil = (pesanBerhasil ? pesanBerhasil + ', dan ' : '') + `status diubah jadi "${parsed.status.label}"`;
+    labelSuara = labelSuara ? labelSuara + ' dan ' + parsed.status.label : parsed.status.label;
   }
 
   try {
@@ -901,6 +984,8 @@ async function terapkanUpdate(record, parsed) {
       `✅ <b>${record.nama}</b> — ${pesanBerhasil}.<br/><button class="undo-btn" id="${undoId}" onclick="batalkanUpdateTerakhir('${undoId}')">↩ Batalkan, salah input</button>`,
       'ok'
     );
+    // Bacakan konfirmasi singkat, contoh: "Danenti, MCU, sukses terinput"
+    ucapkan(`${record.nama}, ${labelSuara}, sukses terinput.`);
     refreshRecords();
   } catch (e) {
     addBotBubble('⚠ Gagal menyimpan ke server. Coba lagi atau cek koneksi internet.', 'err');
@@ -930,6 +1015,7 @@ window.batalkanUpdateTerakhir = async function(undoId) {
 
 document.getElementById('sendBtn').addEventListener('click', handleSend);
 document.getElementById('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSend(); });
+document.getElementById('chatInput').addEventListener('input', tampilkanSaranNama);
 
 (function init() {
   setupVoiceCommand();
