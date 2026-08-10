@@ -1171,15 +1171,24 @@ function isOppOverdue(r) {
   return r.ec && !r.opp && d !== null && d >= 60;
 }
 
+// Menyeragamkan penulisan noreg khusus untuk PEMBANDINGAN saja.
+// Tujuannya: "6893", " 6893 ", dan "L6893" dianggap nomor yang SAMA, karena
+// dalam praktiknya itu memang orang yang sama (cuma beda cara penulisan).
+function normalNoreg(n) {
+  let s = String(n == null ? '' : n).trim().toUpperCase();
+  s = s.replace(/^L[\s.\-]*/, '');   // buang awalan L kalau ada
+  s = s.replace(/[\s.\-]/g, '');     // buang spasi/titik/strip
+  return s;
+}
+
 // Pengingat 4: nomor registrasi (noreg) dipakai lebih dari satu kali.
 // Ini biasanya tanda salah input atau data dobel, jadi perlu segera dicek.
 // Mengembalikan daftar kelompok: [{ noreg, list: [record, record, ...] }, ...]
 function cariNoregGanda() {
   const peta = {};
   records.forEach(r => {
-    const n = (r.noreg || '').trim();
-    if (!n) return; // noreg kosong tidak dihitung ganda
-    const kunci = n.toLowerCase();
+    const kunci = normalNoreg(r.noreg);
+    if (!kunci) return; // noreg kosong tidak dihitung ganda
     if (!peta[kunci]) peta[kunci] = [];
     peta[kunci].push(r);
   });
@@ -1190,9 +1199,9 @@ function cariNoregGanda() {
 
 // Cek apakah satu record termasuk yang noreg-nya ganda (dipakai untuk penyorotan baris)
 function isNoregGanda(r) {
-  const n = (r.noreg || '').trim().toLowerCase();
-  if (!n) return false;
-  return records.filter(x => (x.noreg || '').trim().toLowerCase() === n).length > 1;
+  const kunci = normalNoreg(r.noreg);
+  if (!kunci) return false;
+  return records.filter(x => normalNoreg(x.noreg) === kunci).length > 1;
 }
 
 function renderReminders() {
@@ -1210,7 +1219,7 @@ function renderReminders() {
     const jumlahData = gandaList.reduce((t, g) => t + g.list.length, 0);
     html += `<div class="reminder-box"><h4>⚠ No. Registrasi ganda — ${gandaList.length} nomor dipakai ${jumlahData} data</h4><ul>` +
       gandaList.map(g =>
-        `<li><b>${g.noreg}</b> dipakai ${g.list.length}×: ${g.list.map(r => r.nama || '(tanpa nama)').join(' · ')}</li>`
+        `<li><b>${g.noreg}</b> dipakai ${g.list.length}×: ${g.list.map(r => `${r.nama || '(tanpa nama)'} <span style="opacity:.7">[${r.noreg}]</span>`).join(' · ')}</li>`
       ).join('') +
       `</ul></div>`;
   }
@@ -2334,7 +2343,8 @@ let showingDashboard = true;
 document.getElementById('dashboardToggleBtn').addEventListener('click', () => {
   showingDashboard = !showingDashboard;
   document.getElementById('dashboardWrap').style.display = showingDashboard ? 'block' : 'none';
-  if (!showingSummary) document.getElementById('reminderBox').style.display = showingDashboard ? 'block' : 'none';
+  // Kotak peringatan SENGAJA tetap ditampilkan walau dashboard disembunyikan,
+  // supaya peringatan penting (noreg ganda, dll) tidak pernah terlewat.
   document.getElementById('dashboardToggleBtn').textContent = showingDashboard ? 'Sembunyikan Dashboard' : 'Tampilkan Dashboard';
 });
 
@@ -2342,7 +2352,7 @@ let showingSummary = false;
 document.getElementById('summaryToggleBtn').addEventListener('click', () => {
   showingSummary = !showingSummary;
   document.getElementById('summaryView').style.display = showingSummary ? 'block' : 'none';
-  document.getElementById('reminderBox').style.display = showingSummary ? 'none' : (showingDashboard ? 'block' : 'none');
+  document.getElementById('reminderBox').style.display = showingSummary ? 'none' : 'block';
   document.querySelector('.table-wrap').style.display = showingSummary ? 'none' : 'block';
   document.querySelector('.toolbar').style.display = showingSummary ? 'none' : 'flex';
   document.getElementById('summaryToggleBtn').textContent = showingSummary ? 'Kembali ke Tabel' : 'Ringkasan';
