@@ -162,6 +162,8 @@
   .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
   .status-berjalan { background: var(--warn-bg); color: var(--warn-text); }
   .status-berjalan::before { background: var(--warn-dot); }
+  .status-belummajikan { background: #ede9fe; color: #5b21b6; }
+  .status-belummajikan::before { background: #7c3aed; }
   .status-selesai { background: var(--ok-bg); color: var(--ok-text); }
   .status-selesai::before { background: var(--ok-dot); }
   .status-batal { background: var(--bad-bg); color: var(--bad-text); }
@@ -193,15 +195,6 @@
     border-radius: 6px; white-space: nowrap; cursor: pointer;
   }
   .doc-menu a:hover { background: var(--blue-100); }
-
-  /* Saat mencetak dari dalam dokumen, tampilan aplikasi di belakang layar
-     tidak boleh ikut tercetak. */
-  @media print {
-    body > *:not(#docOverlay) { display: none !important; }
-    #docOverlay { position: static !important; background: none !important; padding: 0 !important; }
-    #docOverlay > div:first-child { display: none !important; }
-    #docOverlay iframe { max-width: none !important; width: 100% !important; height: auto !important; }
-  }
 
   .custom-date-picker {
     display: none; position: fixed; z-index: 50; width: 240px; background: #fff; border-radius: 12px;
@@ -632,6 +625,12 @@
     <div class="stat-label">Proses Berjalan</div>
     <div class="stat-hint">Klik untuk filter</div>
   </div>
+  <div class="stat-card stat-belummajikan" data-filter="belummajikan" onclick="applyStatusFilter('belummajikan')">
+    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+    <div class="stat-value" id="statBelumMajikan">0</div>
+    <div class="stat-label">Belum Dapat Majikan</div>
+    <div class="stat-hint">Klik untuk filter</div>
+  </div>
   <div class="stat-card stat-selesai" data-filter="selesai" onclick="applyStatusFilter('selesai')">
     <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
     <div class="stat-value" id="statSelesai">0</div>
@@ -825,6 +824,7 @@
     <label>Status proses</label>
     <select id="f_status">
       <option value="berjalan">Sedang berjalan</option>
+      <option value="belummajikan">Belum dapat majikan</option>
       <option value="selesai">Proses selesai</option>
       <option value="batal">Batal / mundur</option>
     </select>
@@ -1027,6 +1027,7 @@ document.addEventListener('click', (e) => {
 function statusBadge(status) {
   const map = {
     berjalan: { cls: 'status-berjalan', label: 'Berjalan' },
+    belummajikan: { cls: 'status-belummajikan', label: 'Belum Dapat Majikan' },
     selesai: { cls: 'status-selesai', label: 'Selesai' },
     batal: { cls: 'status-batal', label: 'Batal' }
   };
@@ -1063,7 +1064,7 @@ function alamatCell(r) {
 
 // Salin alamat lengkap ke clipboard HP, siap tempel ke SISKOP2MI tanpa ketik manual.
 window.copyAlamat = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r || !r.alamat) return;
   const btn = document.getElementById('copyBtn_' + id);
   const tampilkanSukses = () => {
@@ -1139,45 +1140,56 @@ function dokumenCell(r) {
   `;
 }
 
-window.toggleDocMenu = function(e, id) {
-  e.stopPropagation();
-  const target = document.getElementById('docMenu_' + id);
-  const sedangTerbuka = target.classList.contains('show');
-  document.querySelectorAll('.doc-menu.show').forEach(m => m.classList.remove('show'));
-  if (sedangTerbuka) return;
+let docMenuAktif = null;   // { tombol, menu } yang sedang terbuka
 
-  target.classList.add('show');
-
-  // Hitung posisi menu agar menempel tepat di bawah tombolnya.
-  // Memakai posisi layar (fixed) supaya menu TIDAK ikut terpotong oleh tabel yang bisa digeser.
-  const tombol = e.currentTarget;
+// Menempatkan menu tepat di bawah tombolnya, dan menjaga agar tetap di dalam layar.
+function posisikanDocMenu() {
+  if (!docMenuAktif) return;
+  const { tombol, menu } = docMenuAktif;
   const r = tombol.getBoundingClientRect();
-  const lebarMenu = target.offsetWidth;
-  const tinggiMenu = target.offsetHeight;
-  const tepi = 8;
 
+  // kalau tombolnya sudah tergeser keluar layar, tutup saja menunya
+  if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) {
+    tutupDocMenu();
+    return;
+  }
+
+  const lebar = menu.offsetWidth, tinggi = menu.offsetHeight, tepi = 8;
   let kiri = r.left;
-  if (kiri + lebarMenu > window.innerWidth - tepi) kiri = window.innerWidth - lebarMenu - tepi;
+  if (kiri + lebar > window.innerWidth - tepi) kiri = window.innerWidth - lebar - tepi;
   if (kiri < tepi) kiri = tepi;
 
   let atas = r.bottom + 4;
-  // kalau ruang di bawah tidak cukup, tampilkan di ATAS tombol
-  if (atas + tinggiMenu > window.innerHeight - tepi) atas = r.top - tinggiMenu - 4;
+  if (atas + tinggi > window.innerHeight - tepi) atas = r.top - tinggi - 4;  // buka ke atas
   if (atas < tepi) atas = tepi;
 
-  target.style.left = kiri + 'px';
-  target.style.top = atas + 'px';
+  menu.style.left = kiri + 'px';
+  menu.style.top = atas + 'px';
+}
+
+window.toggleDocMenu = function(e, id) {
+  e.stopPropagation();
+  const menu = document.getElementById('docMenu_' + id);
+  const sedangTerbuka = menu.classList.contains('show');
+  tutupDocMenu();
+  if (sedangTerbuka) return;
+
+  menu.classList.add('show');
+  docMenuAktif = { tombol: e.currentTarget, menu: menu };
+  posisikanDocMenu();
 };
+
 window.tutupDocMenu = function() {
   document.querySelectorAll('.doc-menu.show').forEach(m => m.classList.remove('show'));
+  docMenuAktif = null;
 };
-document.addEventListener('click', () => {
-  document.querySelectorAll('.doc-menu.show').forEach(m => m.classList.remove('show'));
-});
-// Karena posisinya mengikuti layar, menu ditutup saat halaman/tabel digeser
-// supaya tidak "menggantung" di tempat yang salah.
-window.addEventListener('scroll', tutupDocMenu, true);
-window.addEventListener('resize', tutupDocMenu);
+
+document.addEventListener('click', tutupDocMenu);
+
+// Saat halaman/tabel digeser, menu IKUT BERGESER mengikuti tombolnya
+// (dulu langsung ditutup -- itu yang bikin menu seolah tidak bisa dibuka).
+window.addEventListener('scroll', posisikanDocMenu, true);
+window.addEventListener('resize', posisikanDocMenu);
 
 function daysSince(dateStr) {
   if (!dateStr) return null;
@@ -1315,6 +1327,42 @@ function renderReminders() {
   box.innerHTML = html;
 }
 
+// ===== Perapihan nama kolom dari Google Sheet =====
+// Data dari server dibentuk mengikuti TULISAN di baris judul (baris 1) sheet.
+// Kalau tulisannya beda huruf besar/kecil atau ada spasi (mis. "ID", " id "),
+// sistem jadi tidak mengenali kolomnya. Fungsi ini menyeragamkannya kembali.
+const KOLOM_RESMI = ['id','noreg','nama','tgllahir','alamat','kabupaten','keterangan','email',
+  'telp','pass','daftar','sales','statusmajikan','ttdmajikan','mcu','hasilmedical','ketmedical',
+  'rekom','status','opp','terbang','catatan','ec','selesaiDate','statuspaspor','tglpaspor'];
+
+function rapikanRecord(r) {
+  const hasil = {};
+  Object.keys(r).forEach(k => {
+    const bersih = String(k).trim().toLowerCase().replace(/[\s_-]/g, '');
+    const resmi = KOLOM_RESMI.find(c => c.toLowerCase() === bersih);
+    hasil[resmi || k] = r[k];
+  });
+  return hasil;
+}
+
+// Kalau ternyata kolom "id" benar-benar tidak ada, beri tahu dengan jelas
+// (sekali saja) berikut daftar kolom yang terbaca, supaya mudah diperbaiki.
+let sudahPeringatanKolom = false;
+function periksaKolomId(daftar) {
+  if (sudahPeringatanKolom || !daftar.length) return;
+  const adaId = daftar.some(r => String(r.id == null ? '' : r.id).trim() !== '');
+  if (adaId) return;
+  sudahPeringatanKolom = true;
+  const kolomTerbaca = Object.keys(daftar[0]).join(', ');
+  alert(
+    'PENTING: kolom "id" tidak ditemukan pada data.\n\n' +
+    'Akibatnya tombol Cetak, Kirim WA, Edit, dan Hapus tidak bisa bekerja.\n\n' +
+    'Kolom yang terbaca saat ini:\n' + kolomTerbaca + '\n\n' +
+    'Perbaikan: buka Google Sheet, pastikan BARIS 1 kolom A tertulis persis: id\n' +
+    '(huruf kecil semua, tanpa spasi), lalu tekan tombol Refresh.'
+  );
+}
+
 async function loadData() {
   document.getElementById('statusMsg').textContent = 'Memuat data...';
   try {
@@ -1326,7 +1374,8 @@ async function loadData() {
       doLogout();
       return;
     }
-    records = json;
+    records = Array.isArray(json) ? json.map(rapikanRecord) : [];
+    periksaKolomId(records);
     document.getElementById('statusMsg').textContent = 'Data terhubung ke Google Sheets.';
   } catch (e) {
     document.getElementById('statusMsg').textContent = 'Gagal memuat data. Cek URL API di kode, atau koneksi internet.';
@@ -1350,6 +1399,7 @@ async function sendAction(action, record) {
 function renderDashboard() {
   const total = records.length;
   const berjalan = records.filter(r => r.status === 'berjalan').length;
+  const belumMajikan = records.filter(r => r.status === 'belummajikan').length;
   const selesai = records.filter(r => r.status === 'selesai').length;
   const batal = records.filter(r => r.status === 'batal').length;
   const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r)).length;
@@ -1357,6 +1407,7 @@ function renderDashboard() {
 
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statBerjalan').textContent = berjalan;
+  document.getElementById('statBelumMajikan').textContent = belumMajikan;
   document.getElementById('statSelesai').textContent = selesai;
   document.getElementById('statBatal').textContent = batal;
   document.getElementById('statPengingat').textContent = pengingat;
@@ -1368,7 +1419,7 @@ function renderDashboard() {
 
   const chip = document.getElementById('filterChip');
   const chipLabel = document.getElementById('filterChipLabel');
-  const labels = { berjalan: 'Proses Berjalan', selesai: 'Selesai', batal: 'Batal / Mundur', alert: 'Butuh Perhatian', penempatan: 'Jumlah Penempatan (Sudah Terbang)' };
+  const labels = { berjalan: 'Proses Berjalan', belummajikan: 'Belum Dapat Majikan', selesai: 'Selesai', batal: 'Batal / Mundur', alert: 'Butuh Perhatian', penempatan: 'Jumlah Penempatan (Sudah Terbang)' };
   if (statusFilter === 'all') {
     chip.style.display = 'none';
   } else {
@@ -1389,6 +1440,7 @@ function render() {
   const q = document.getElementById('searchBox').value.toLowerCase();
   let filtered = records.filter(r => (r.nama || '').toLowerCase().includes(q));
   if (statusFilter === 'berjalan') filtered = filtered.filter(r => r.status === 'berjalan');
+  else if (statusFilter === 'belummajikan') filtered = filtered.filter(r => r.status === 'belummajikan');
   else if (statusFilter === 'selesai') filtered = filtered.filter(r => r.status === 'selesai');
   else if (statusFilter === 'batal') filtered = filtered.filter(r => r.status === 'batal');
   else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r));
@@ -1507,7 +1559,7 @@ function closeModal() {
 }
 
 window.editRecord = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (r) openModal(r);
 };
 
@@ -1548,8 +1600,23 @@ const SALES_PHONE = {
   'Pinkcollar': '+601115783685'
 };
 
+// Mencari data CPMI berdasarkan ID.
+// Dibandingkan sebagai teks supaya tetap ketemu walau ID dari Google Sheets
+// terbaca sebagai angka. Dulu perbandingannya ketat, sehingga tombol Cetak/WA
+// bisa "diam saja" tanpa pesan apa pun ketika tipe datanya berbeda.
+function cariRecord(id) {
+  const kunci = String(id == null ? '' : id).trim();
+  const r = records.find(x => String(x.id == null ? '' : x.id).trim() === kunci);
+  if (!r) {
+    alert('Data CPMI tidak ditemukan (ID: "' + kunci + '").\n\n' +
+          'Coba tekan tombol 🔄 Refresh dulu. Kalau masih sama, kemungkinan kolom "id" ' +
+          'pada baris ini kosong di Google Sheet — silakan isi/perbaiki lewat tombol Edit.');
+  }
+  return r;
+}
+
 window.kirimWaSales = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r) return;
   if (!r.sales) {
     alert('Data ini belum ada nama Sales-nya, silakan isi dulu lewat Edit.');
@@ -1578,7 +1645,7 @@ function kirimWaRekomSelesai(r) {
 }
 
 window.kirimWaManual = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r) return;
   const nomor = formatNomorWa(r.telp);
   if (!nomor) {
@@ -1683,60 +1750,37 @@ function tanggalIndonesia() {
 }
 
 // ===== Pembuka dokumen untuk dicetak =====
-// Dokumen dibuka LANGSUNG DI DALAM APLIKASI (bukan jendela baru), supaya tidak pernah
-// terhalang pemblokir pop-up. Isinya dimuat di bingkai terpisah agar tampilan & aturan
-// cetak surat tidak tercampur dengan tampilan aplikasi.
+// Dokumen dibuka di TAB BARU (cara ini paling andal untuk mencetak: tombol
+// "Cetak / Simpan PDF" di dalam dokumen langsung memanggil kotak cetak browser,
+// dan isinya bisa diedit dulu sebelum dicetak).
 function bukaDokumenCetak(html) {
-  // tutup dokumen sebelumnya kalau masih terbuka
-  const lama = document.getElementById('docOverlay');
-  if (lama) lama.remove();
+  let win = null;
+  try {
+    win = window.open('', '_blank');
+  } catch (e) {
+    win = null;
+  }
 
-  const overlay = document.createElement('div');
-  overlay.id = 'docOverlay';
-  overlay.style.cssText =
-    'position:fixed; inset:0; z-index:9999; background:rgba(12,32,54,.75); ' +
-    'display:flex; flex-direction:column; align-items:center; padding:10px;';
+  if (!win || !win.document) {
+    alert(
+      'Dokumen tidak bisa dibuka karena pop-up diblokir browser.\n\n' +
+      'Cara mengizinkan:\n' +
+      '1. Lihat ujung kanan kolom alamat, ada ikon pemberitahuan pop-up diblokir\n' +
+      '2. Klik ikon tersebut\n' +
+      '3. Pilih "Selalu izinkan pop-up dari situs ini", lalu klik Selesai\n' +
+      '4. Coba cetak lagi'
+    );
+    return;
+  }
 
-  const bar = document.createElement('div');
-  bar.style.cssText =
-    'width:100%; max-width:900px; display:flex; gap:8px; align-items:center; ' +
-    'justify-content:space-between; padding:8px 10px; background:#fff; ' +
-    'border-radius:10px 10px 0 0; flex-shrink:0;';
-  bar.innerHTML =
-    '<span style="font-size:12px; color:#5c7a94; font-weight:600;">' +
-    'Dokumen siap dicetak — bisa diedit dulu sebelum menekan tombol Cetak di dalam dokumen.</span>';
-
-  const tutup = document.createElement('button');
-  tutup.textContent = '✕ Tutup';
-  tutup.style.cssText =
-    'padding:7px 14px; border-radius:8px; border:1px solid #c3dcef; background:#f7fbfe; ' +
-    'color:#16324f; font-weight:700; font-size:12px; cursor:pointer; flex-shrink:0;';
-  tutup.onclick = () => overlay.remove();
-  bar.appendChild(tutup);
-
-  const frame = document.createElement('iframe');
-  frame.style.cssText =
-    'width:100%; max-width:900px; flex:1; border:0; background:#fff; ' +
-    'border-radius:0 0 10px 10px;';
-
-  overlay.appendChild(bar);
-  overlay.appendChild(frame);
-  document.body.appendChild(overlay);
-
-  const d = frame.contentWindow.document;
-  d.open();
-  d.write(html);
-  d.close();
-
-  // tombol Esc untuk menutup
-  const esc = (e) => {
-    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', esc); }
-  };
-  document.addEventListener('keydown', esc);
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.focus();
 }
 
 window.printSuratPengantar = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r) return;
   const tgl = tanggalIndonesia();
 
@@ -1853,7 +1897,7 @@ function bulanRomawi(monthIndex0) {
 }
 
 window.printPP = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r) return;
 
   const hariList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -2001,7 +2045,7 @@ window.printPP = function(id) {
 
 // ===== Cetak SP Fit (Surat Pernyataan) — muncul kalau Hasil Medical Pending/Unfit =====
 window.printSPFit = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r) return;
 
   const keteranganMedical = r.ketmedical ? r.ketmedical : (r.hasilmedical || 'Pending');
@@ -2071,7 +2115,7 @@ window.printSPFit = function(id) {
 
 // ===== Cetak Surat Permohonan Pembuatan Paspor =====
 window.printPermohonanPaspor = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r) return;
 
   const bulanList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -2172,7 +2216,7 @@ di<br/>
 // Tempat Lahir dan No. Paspor sengaja dikosongkan (titik-titik) karena belum ada sumber
 // datanya di sistem -- tinggal diisi manual sebelum dicetak (dokumen ini bisa diedit langsung).
 window.printSuratDirut = function(id) {
-  const r = records.find(x => x.id === id);
+  const r = cariRecord(id);
   if (!r) return;
 
   const html = `<!DOCTYPE html>
@@ -2309,7 +2353,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   const nama = document.getElementById('f_nama').value.trim();
   if (!nama) { alert('Nama CPMI wajib diisi.'); return; }
   const newStatus = document.getElementById('f_status').value;
-  const existing = editingId ? records.find(r => r.id === editingId) : null;
+  const existing = editingId ? cariRecord(editingId) : null;
 
   // Catat tanggal hari ini secara otomatis saat status pertama kali diubah jadi "selesai"
   // (dipakai untuk menghitung pengingat 7 hari belum masuk EC, tidak perlu diisi manual)
