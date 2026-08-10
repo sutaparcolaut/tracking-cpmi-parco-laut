@@ -595,7 +595,7 @@
     <div>
       <span class="eyebrow">Sistem Internal &middot; P3MI</span>
       <h1>Tracking CPMI &mdash; PT Parco Laut Cabang Indramayu</h1>
-      <p class="sub">Data tersimpan di Google Sheets. Bisa diakses dan diedit bersama tim secara real-time.</p>
+      <p class="sub">Data tersimpan di Google Sheets. Bisa diakses dan diedit bersama tim secara real-time. <span style="opacity:.65;">· versi 2026-08-08c (data dobel: L wajib, DH bila nama sama)</span></p>
       <p class="sub" id="scopeNotice" style="display:none; color:var(--gold); font-weight:700; margin-top:4px;"></p>
     </div>
     <div class="header-actions">
@@ -1181,27 +1181,55 @@ function normalNoreg(n) {
   return s;
 }
 
-// Pengingat 4: nomor registrasi (noreg) dipakai lebih dari satu kali.
-// Ini biasanya tanda salah input atau data dobel, jadi perlu segera dicek.
-// Mengembalikan daftar kelompok: [{ noreg, list: [record, record, ...] }, ...]
+// Menyeragamkan penulisan nama untuk PEMBANDINGAN saja
+// (huruf besar/kecil dan spasi ganda tidak dianggap beda).
+function normalNama(n) {
+  return String(n == null ? '' : n).trim().toUpperCase().replace(/\s+/g, ' ');
+}
+
+// Kunci pembanding untuk mendeteksi data dobel. Aturannya BEDA tergantung jenis noreg:
+//
+//  - Noreg biasa (Lxxxx / angka): nomornya unik per orang. Jadi kalau ada NOMOR YANG SAMA,
+//    langsung dianggap dobel WALAUPUN namanya berbeda.
+//
+//  - Noreg "DH" (Direct Hire): nomor ini dipakai bersama oleh banyak CPMI, jadi wajar
+//    kalau muncul berkali-kali. Karena itu baru dianggap dobel kalau NAMANYA JUGA SAMA.
+function kunciGanda(r) {
+  const nomor = normalNoreg(r.noreg);
+  if (!nomor) return null;                     // noreg kosong tidak dihitung
+  const asli = String(r.noreg == null ? '' : r.noreg).trim().toUpperCase();
+  if (asli.indexOf('DH') === 0) {
+    const nm = normalNama(r.nama);
+    if (!nm) return null;                      // DH tanpa nama tidak bisa dipastikan dobel
+    return 'DH:' + nomor + '|' + nm;
+  }
+  return 'L:' + nomor;
+}
+
+// Pengingat 4: data dobel (lihat aturan di kunciGanda di atas)
 function cariNoregGanda() {
   const peta = {};
   records.forEach(r => {
-    const kunci = normalNoreg(r.noreg);
-    if (!kunci) return; // noreg kosong tidak dihitung ganda
-    if (!peta[kunci]) peta[kunci] = [];
-    peta[kunci].push(r);
+    const k = kunciGanda(r);
+    if (!k) return;
+    if (!peta[k]) peta[k] = [];
+    peta[k].push(r);
   });
   return Object.keys(peta)
     .filter(k => peta[k].length > 1)
-    .map(k => ({ noreg: peta[k][0].noreg, list: peta[k] }));
+    .map(k => ({
+      tipe: k.indexOf('DH:') === 0 ? 'DH' : 'L',
+      noreg: peta[k][0].noreg,
+      nama: peta[k][0].nama,
+      list: peta[k]
+    }));
 }
 
-// Cek apakah satu record termasuk yang noreg-nya ganda (dipakai untuk penyorotan baris)
+// Cek apakah satu record termasuk data dobel (dipakai untuk hitungan kartu & penyorotan baris)
 function isNoregGanda(r) {
-  const kunci = normalNoreg(r.noreg);
-  if (!kunci) return false;
-  return records.filter(x => normalNoreg(x.noreg) === kunci).length > 1;
+  const k = kunciGanda(r);
+  if (!k) return false;
+  return records.filter(x => kunciGanda(x) === k).length > 1;
 }
 
 function renderReminders() {
@@ -1217,9 +1245,10 @@ function renderReminders() {
   let html = '';
   if (gandaList.length > 0) {
     const jumlahData = gandaList.reduce((t, g) => t + g.list.length, 0);
-    html += `<div class="reminder-box"><h4>⚠ No. Registrasi ganda — ${gandaList.length} nomor dipakai ${jumlahData} data</h4><ul>` +
-      gandaList.map(g =>
-        `<li><b>${g.noreg}</b> dipakai ${g.list.length}×: ${g.list.map(r => `${r.nama || '(tanpa nama)'} <span style="opacity:.7">[${r.noreg}]</span>`).join(' · ')}</li>`
+    html += `<div class="reminder-box"><h4>⚠ Data dobel — ${gandaList.length} temuan (${jumlahData} data)</h4><ul>` +
+      gandaList.map(g => g.tipe === 'DH'
+        ? `<li><b>${g.nama}</b> (${g.noreg}) terinput ${g.list.length}× <span style="opacity:.7">— nama sama di Direct Hire</span></li>`
+        : `<li>No. Reg <b>${g.noreg}</b> dipakai ${g.list.length}×: ${g.list.map(r => r.nama || '(tanpa nama)').join(' · ')}</li>`
       ).join('') +
       `</ul></div>`;
   }
