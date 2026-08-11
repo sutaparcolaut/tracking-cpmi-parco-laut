@@ -164,6 +164,8 @@
   .status-berjalan::before { background: var(--warn-dot); }
   .status-belummajikan { background: #ede9fe; color: #5b21b6; }
   .status-belummajikan::before { background: #7c3aed; }
+  .status-pending { background: #e2e8f0; color: #475569; }
+  .status-pending::before { background: #64748b; }
   .status-selesai { background: var(--ok-bg); color: var(--ok-text); }
   .status-selesai::before { background: var(--ok-dot); }
   .status-batal { background: var(--bad-bg); color: var(--bad-text); }
@@ -373,47 +375,73 @@
   .summary-empty { font-size: 12.5px; color: var(--muted); padding: 8px 0; }
 
   /* ===== Dashboard ===== */
+  /* ===== Dashboard: 4 kolom x 2 baris =====
+     Semua kartu berlatar TERANG dengan semburat warna lembut sesuai artinya.
+     Tidak ada kartu gelap, supaya tidak tertukar dengan tanda "sedang dipilih".
+     Kartu yang sedang aktif ditandai cincin warna + sedikit terangkat. */
   .dashboard-grid {
-    display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 11px; margin-bottom: 16px;
   }
-  @media (max-width: 1300px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 1000px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+
   .stat-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 15px 16px; box-shadow: var(--shadow); position: relative; overflow: hidden;
-    transition: transform .15s, box-shadow .15s, border-color .15s;
+    --aksen: #3382c9;
+    background: linear-gradient(152deg, #fff 35%, color-mix(in srgb, var(--aksen) 13%, #fff));
+    border: 1px solid color-mix(in srgb, var(--aksen) 26%, #fff);
+    border-radius: 14px; padding: 12px 14px 13px; position: relative; overflow: hidden;
     cursor: pointer; user-select: none;
+    box-shadow: 0 1px 2px rgba(20,84,143,.05);
+    transition: transform .18s ease, box-shadow .18s ease;
   }
-  .stat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -14px rgba(20,84,143,.28); }
-  .stat-card.active { box-shadow: 0 0 0 2.5px var(--navy-900), 0 14px 30px -14px rgba(20,84,143,.35); }
-
-  .stat-card.stat-total { border-color: var(--gold-soft); background: linear-gradient(160deg, #fff, var(--blue-100)); }
-  .stat-card.stat-total::after {
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, var(--gold), var(--blue-500));
+  /* lingkaran cahaya lembut di pojok, memberi kesan bervolume tanpa ramai */
+  .stat-card::after {
+    content: ""; position: absolute; right: -26px; top: -26px; width: 82px; height: 82px;
+    border-radius: 50%; background: color-mix(in srgb, var(--aksen) 12%, transparent);
+    pointer-events: none;
   }
-  .stat-card.stat-berjalan { background: linear-gradient(160deg, #fff, var(--warn-bg)); border-color: #f3d9a8; }
-  .stat-card.stat-selesai  { background: linear-gradient(160deg, #fff, var(--ok-bg));   border-color: #b9e3c8; }
-  .stat-card.stat-batal    { background: linear-gradient(160deg, #fff, var(--bad-bg));  border-color: #f4c3c3; }
-  .stat-card.stat-alert    { background: linear-gradient(160deg, #fff, var(--alert-bg)); border-color: #f0d19c; }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--aksen) 55%, transparent);
+  }
+  .stat-card.active {
+    box-shadow: 0 0 0 2px var(--aksen), 0 14px 26px -14px color-mix(in srgb, var(--aksen) 60%, transparent);
+    transform: translateY(-2px);
+  }
 
+  .stat-card .stat-arrow {
+    position: absolute; right: 12px; bottom: 11px; width: 14px; height: 14px;
+    color: var(--aksen); opacity: 0; transform: translateX(-4px);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .stat-card:hover .stat-arrow { opacity: .85; transform: translateX(0); }
+
+  .stat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; min-height: 26px; position: relative; z-index: 1; }
   .stat-card .stat-icon {
-    width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
-    margin-bottom: 10px; box-shadow: 0 2px 6px -1px rgba(20,84,143,.15);
+    width: 26px; height: 26px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff; color: var(--aksen);
+    box-shadow: 0 2px 5px -1px color-mix(in srgb, var(--aksen) 35%, transparent);
   }
-  .stat-card .stat-icon svg { width: 18px; height: 18px; }
-  .stat-card .stat-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 700; color: var(--navy-900); line-height: 1; }
-  .stat-card .stat-label { font-size: 11.5px; color: var(--muted); margin-top: 4px; font-weight: 500; }
-  .stat-card .stat-hint { font-size: 10px; color: var(--muted); margin-top: 6px; opacity: .75; }
-  .stat-card.stat-total .stat-icon { background: #fff; color: var(--blue-700); }
-  .stat-card.stat-berjalan .stat-icon { background: #fff; color: var(--warn-text); }
-  .stat-card.stat-selesai .stat-icon { background: #fff; color: var(--ok-text); }
-  .stat-card.stat-batal .stat-icon { background: #fff; color: var(--bad-text); }
-  .stat-card.stat-alert .stat-icon { background: #fff; color: var(--alert-text); }
-  .stat-card.stat-berjalan .stat-value { color: var(--warn-text); }
-  .stat-card.stat-selesai .stat-value { color: var(--ok-text); }
-  .stat-card.stat-batal .stat-value { color: var(--bad-text); }
-  .stat-card.stat-alert .stat-value { color: var(--alert-text); }
+  .stat-card .stat-icon svg { width: 14px; height: 14px; }
+  .stat-card .stat-label {
+    font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--aksen) 72%, #4a5a6b); line-height: 1.25;
+  }
+  .stat-card .stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800;
+    color: var(--aksen); line-height: 1; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; position: relative; z-index: 1;
+  }
+
+  /* Warna tiap kartu -- dipilih agar berdampingan tetap nyaman dilihat */
+  .stat-card.stat-total        { --aksen: #1f5c96; }
+  .stat-card.stat-belummajikan { --aksen: #7c4dcc; }
+  .stat-card.stat-berjalan     { --aksen: #c07f12; }
+  .stat-card.stat-pending      { --aksen: #6b7a8c; }
+  .stat-card.stat-belumttd     { --aksen: #0f8a9e; }
+  .stat-card.stat-alert        { --aksen: #d17a1d; }
+  .stat-card.stat-batal        { --aksen: #c0504d; }
+  .stat-card.stat-selesai      { --aksen: #1f9254; }
 
 
   /* ===== Pagination ===== */
@@ -614,46 +642,68 @@
 <div id="dashboardWrap">
 <div class="dashboard-grid" id="dashboardGrid">
   <div class="stat-card stat-total" data-filter="all" onclick="applyStatusFilter('all')">
-    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="stat-label">Total CPMI</div>
+    </div>
     <div class="stat-value" id="statTotal">0</div>
-    <div class="stat-label">Total CPMI</div>
-    <div class="stat-hint">Klik untuk lihat semua</div>
-  </div>
-  <div class="stat-card stat-berjalan" data-filter="berjalan" onclick="applyStatusFilter('berjalan')">
-    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-    <div class="stat-value" id="statBerjalan">0</div>
-    <div class="stat-label">Proses Berjalan</div>
-    <div class="stat-hint">Klik untuk filter</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
   </div>
   <div class="stat-card stat-belummajikan" data-filter="belummajikan" onclick="applyStatusFilter('belummajikan')">
-    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="7.5" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 9-6"/><circle cx="17" cy="16.5" r="3.5"/><line x1="19.6" y1="19.1" x2="22" y2="21.5"/></svg></div>
+      <div class="stat-label">Belum Dapat Majikan</div>
+    </div>
     <div class="stat-value" id="statBelumMajikan">0</div>
-    <div class="stat-label">Belum Dapat Majikan</div>
-    <div class="stat-hint">Klik untuk filter</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
   </div>
-  <div class="stat-card stat-selesai" data-filter="selesai" onclick="applyStatusFilter('selesai')">
-    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-    <div class="stat-value" id="statSelesai">0</div>
-    <div class="stat-label">Selesai</div>
-    <div class="stat-hint">Klik untuk filter</div>
+  <div class="stat-card stat-berjalan" data-filter="berjalan" onclick="applyStatusFilter('berjalan')">
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><polyline points="21 3 21 9 15 9"/><polyline points="12 7.5 12 12 15.2 13.8"/></svg></div>
+      <div class="stat-label">Proses Berjalan</div>
+    </div>
+    <div class="stat-value" id="statBerjalan">0</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
   </div>
-  <div class="stat-card stat-batal" data-filter="batal" onclick="applyStatusFilter('batal')">
-    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
-    <div class="stat-value" id="statBatal">0</div>
-    <div class="stat-label">Batal / Mundur</div>
-    <div class="stat-hint">Klik untuk filter</div>
+  <div class="stat-card stat-pending" data-filter="pending" onclick="applyStatusFilter('pending')">
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/></svg></div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-value" id="statPending">0</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+  </div>
+  <div class="stat-card stat-belumttd" data-filter="belumttd" onclick="applyStatusFilter('belumttd')">
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20.5h18"/><path d="M5 16.5c2.5-6 4-9 5.5-9s1 6 2.5 6 2.5-3 4-3"/></svg></div>
+      <div class="stat-label">Belum TTD Majikan</div>
+    </div>
+    <div class="stat-value" id="statBelumTtd">0</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
   </div>
   <div class="stat-card stat-alert" data-filter="alert" onclick="applyStatusFilter('alert')">
-    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <div class="stat-label">Butuh Perhatian</div>
+    </div>
     <div class="stat-value" id="statPengingat">0</div>
-    <div class="stat-label">Butuh Perhatian</div>
-    <div class="stat-hint">Klik untuk filter</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+  </div>
+  <div class="stat-card stat-batal" data-filter="batal" onclick="applyStatusFilter('batal')">
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><line x1="17" y1="11" x2="22" y2="16"/><line x1="22" y1="11" x2="17" y2="16"/></svg></div>
+      <div class="stat-label">Batal / Mundur</div>
+    </div>
+    <div class="stat-value" id="statBatal">0</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
   </div>
   <div class="stat-card stat-selesai" data-filter="penempatan" onclick="applyStatusFilter('penempatan')">
-    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
+    <div class="stat-head">
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5a2.5 2.5 0 0 0-3.5-3.5L12.5 7.5 4.3 5.7a1 1 0 0 0-1 1.6l6 4.2-2.6 2.6-2.5-.5a.8.8 0 0 0-.7 1.3l2.4 2.4 2.4 2.4a.8.8 0 0 0 1.3-.7l-.5-2.5 2.6-2.6 4.2 6a1 1 0 0 0 1.6-1z"/></svg></div>
+      <div class="stat-label">Jumlah Penempatan</div>
+    </div>
     <div class="stat-value" id="statPenempatan">0</div>
-    <div class="stat-label">Jumlah Penempatan</div>
-    <div class="stat-hint">Sudah terbang &middot; klik untuk filter</div>
+    <svg class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
   </div>
 </div>
 </div>
@@ -825,6 +875,7 @@
     <select id="f_status">
       <option value="berjalan">Sedang berjalan</option>
       <option value="belummajikan">Belum dapat majikan</option>
+      <option value="pending">Pending (dihentikan sementara)</option>
       <option value="selesai">Proses selesai</option>
       <option value="batal">Batal / mundur</option>
     </select>
@@ -1028,6 +1079,7 @@ function statusBadge(status) {
   const map = {
     berjalan: { cls: 'status-berjalan', label: 'Berjalan' },
     belummajikan: { cls: 'status-belummajikan', label: 'Belum Dapat Majikan' },
+    pending: { cls: 'status-pending', label: 'Pending' },
     selesai: { cls: 'status-selesai', label: 'Selesai' },
     batal: { cls: 'status-batal', label: 'Batal' }
   };
@@ -1200,7 +1252,14 @@ function daysSince(dateStr) {
 }
 
 // Pengingat 1: sudah 7 hari sejak MCU, tapi belum ada tanggal Rekom ID
+// CPMI yang Batal/mengundurkan diri maupun yang Pending TIDAK perlu diingatkan lagi,
+// karena prosesnya memang sedang berhenti (permanen atau sementara).
+function sudahMundur(r) {
+  return r.status === 'batal' || r.status === 'pending';
+}
+
 function isMcuOverdue(r) {
+  if (sudahMundur(r)) return false;
   const d = daysSince(r.mcu);
   return r.mcu && !r.rekom && d !== null && d >= 7;
 }
@@ -1208,12 +1267,14 @@ function isMcuOverdue(r) {
 // Pengingat 2: status sudah "selesai" selama 7 hari, tapi belum ada tanggal EC
 // (tanggal mulai dihitung otomatis dari selesaiDate, dicatat saat status pertama kali diubah jadi "selesai")
 function isEcOverdue(r) {
+  if (sudahMundur(r)) return false;
   const d = daysSince(r.selesaiDate);
   return r.status === 'selesai' && !r.ec && d !== null && d >= 7;
 }
 
 // Pengingat 3: sudah 2 bulan (60 hari) sejak EC, tapi belum ada tanggal OPP
 function isOppOverdue(r) {
+  if (sudahMundur(r)) return false;
   const d = daysSince(r.ec);
   return r.ec && !r.opp && d !== null && d >= 60;
 }
@@ -1267,6 +1328,7 @@ function kunciGanda(r) {
 function cariNoregGanda() {
   const peta = {};
   records.forEach(r => {
+    if (sudahMundur(r)) return;   // yang sudah mundur tidak dihitung dobel
     const k = kunciGanda(r);
     if (!k) return;
     if (!peta[k]) peta[k] = [];
@@ -1284,6 +1346,7 @@ function cariNoregGanda() {
 
 // Cek apakah satu record termasuk data dobel (dipakai untuk hitungan kartu & penyorotan baris)
 function isNoregGanda(r) {
+  if (sudahMundur(r)) return false;
   const k = kunciGanda(r);
   if (!k) return false;
   return records.filter(x => kunciGanda(x) === k).length > 1;
@@ -1367,7 +1430,7 @@ async function loadData() {
   document.getElementById('statusMsg').textContent = 'Memuat data...';
   try {
     const url = API_URL + '?username=' + encodeURIComponent(currentUser.username) + '&password=' + encodeURIComponent(currentUser.password);
-    const res = await fetch(url);
+    const res = await fetchBatasWaktu(url, {}, 30);
     const json = await res.json();
     if (json && json.error === 'unauthorized') {
       document.getElementById('statusMsg').textContent = 'Sesi tidak valid, silakan login ulang.';
@@ -1378,7 +1441,9 @@ async function loadData() {
     periksaKolomId(records);
     document.getElementById('statusMsg').textContent = 'Data terhubung ke Google Sheets.';
   } catch (e) {
-    document.getElementById('statusMsg').textContent = 'Gagal memuat data. Cek URL API di kode, atau koneksi internet.';
+    document.getElementById('statusMsg').textContent = (e && e.name === 'AbortError')
+      ? 'Server tidak menjawab (lebih dari 30 detik). Cek Apps Script > Eksekusi, hentikan proses yang masih berjalan, lalu tekan Refresh.'
+      : 'Gagal memuat data. Cek URL API di kode, atau koneksi internet.';
   }
   render();
 }
@@ -1400,7 +1465,9 @@ function renderDashboard() {
   const total = records.length;
   const berjalan = records.filter(r => r.status === 'berjalan').length;
   const belumMajikan = records.filter(r => r.status === 'belummajikan').length;
-  const selesai = records.filter(r => r.status === 'selesai').length;
+  const pending = records.filter(r => r.status === 'pending').length;
+  // Proses sudah selesai tapi majikan belum tanda tangan -> perlu dikejar soal pembayaran
+  const belumTtd = records.filter(r => r.status === 'selesai' && !r.ttdmajikan).length;
   const batal = records.filter(r => r.status === 'batal').length;
   const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r)).length;
   const penempatan = records.filter(r => !!r.terbang).length;
@@ -1408,7 +1475,8 @@ function renderDashboard() {
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statBerjalan').textContent = berjalan;
   document.getElementById('statBelumMajikan').textContent = belumMajikan;
-  document.getElementById('statSelesai').textContent = selesai;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statBelumTtd').textContent = belumTtd;
   document.getElementById('statBatal').textContent = batal;
   document.getElementById('statPengingat').textContent = pengingat;
   document.getElementById('statPenempatan').textContent = penempatan;
@@ -1419,7 +1487,7 @@ function renderDashboard() {
 
   const chip = document.getElementById('filterChip');
   const chipLabel = document.getElementById('filterChipLabel');
-  const labels = { berjalan: 'Proses Berjalan', belummajikan: 'Belum Dapat Majikan', selesai: 'Selesai', batal: 'Batal / Mundur', alert: 'Butuh Perhatian', penempatan: 'Jumlah Penempatan (Sudah Terbang)' };
+  const labels = { berjalan: 'Proses Berjalan', belummajikan: 'Belum Dapat Majikan', pending: 'Pending', belumttd: 'Selesai tapi Majikan Belum TTD', selesai: 'Selesai', batal: 'Batal / Mundur', alert: 'Butuh Perhatian', penempatan: 'Jumlah Penempatan (Sudah Terbang)' };
   if (statusFilter === 'all') {
     chip.style.display = 'none';
   } else {
@@ -1441,6 +1509,8 @@ function render() {
   let filtered = records.filter(r => (r.nama || '').toLowerCase().includes(q));
   if (statusFilter === 'berjalan') filtered = filtered.filter(r => r.status === 'berjalan');
   else if (statusFilter === 'belummajikan') filtered = filtered.filter(r => r.status === 'belummajikan');
+  else if (statusFilter === 'pending') filtered = filtered.filter(r => r.status === 'pending');
+  else if (statusFilter === 'belumttd') filtered = filtered.filter(r => r.status === 'selesai' && !r.ttdmajikan);
   else if (statusFilter === 'selesai') filtered = filtered.filter(r => r.status === 'selesai');
   else if (statusFilter === 'batal') filtered = filtered.filter(r => r.status === 'batal');
   else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r));
@@ -1546,7 +1616,9 @@ function openModal(record) {
   document.getElementById('tglPasporWrap').style.display =
     (record && record.statuspaspor === 'Perpanjang') ? 'block' : 'none';
   setDateField('f_rekom', record ? record.rekom : '');
-  document.getElementById('f_status').value = record ? record.status : 'berjalan';
+  // CPMI baru otomatis berstatus "Belum dapat majikan", karena saat baru mendaftar
+  // memang belum ada majikan. Statusnya naik jadi "Sedang berjalan" begitu MCU diisi.
+  document.getElementById('f_status').value = record ? record.status : 'belummajikan';
   setDateField('f_opp', record ? record.opp : '');
   setDateField('f_terbang', record ? record.terbang : '');
   document.getElementById('f_catatan').value = record ? record.catatan : '';
@@ -2352,7 +2424,17 @@ document.getElementById('searchBox').addEventListener('input', () => { currentPa
 document.getElementById('saveBtn').addEventListener('click', async () => {
   const nama = document.getElementById('f_nama').value.trim();
   if (!nama) { alert('Nama CPMI wajib diisi.'); return; }
-  const newStatus = document.getElementById('f_status').value;
+  let newStatus = document.getElementById('f_status').value;
+
+  // Kalau tanggal MCU sudah diisi, berarti prosesnya memang sudah berjalan.
+  // Status "Belum dapat majikan" otomatis naik jadi "Sedang berjalan" -- tidak perlu
+  // diubah manual. Status Selesai / Batal tidak diutak-atik.
+  const mcuTerisi = !!getDateField('f_mcu');
+  if (mcuTerisi && newStatus === 'belummajikan') {
+    newStatus = 'berjalan';
+    document.getElementById('f_status').value = 'berjalan';
+  }
+
   const existing = editingId ? cariRecord(editingId) : null;
 
   // Catat tanggal hari ini secara otomatis saat status pertama kali diubah jadi "selesai"
@@ -2611,6 +2693,20 @@ document.getElementById('refreshBtn').addEventListener('click', async function (
 
 document.getElementById('logoutBtn').addEventListener('click', doLogout);
 
+// Memanggil server dengan BATAS WAKTU. Kalau server tidak menjawab dalam waktu
+// tersebut, permintaan dibatalkan dan pesannya jelas -- tidak menggantung selamanya
+// di tulisan "Memeriksa...".
+async function fetchBatasWaktu(url, opsi, detik) {
+  const batas = (detik || 25) * 1000;
+  const pengontrol = new AbortController();
+  const timer = setTimeout(() => pengontrol.abort(), batas);
+  try {
+    return await fetch(url, Object.assign({}, opsi || {}, { signal: pengontrol.signal }));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function attemptLogin(username, password) {
   const btn = document.getElementById('loginBtn');
   const errorBox = document.getElementById('loginError');
@@ -2618,10 +2714,10 @@ async function attemptLogin(username, password) {
   btn.textContent = 'Memeriksa...';
   btn.disabled = true;
   try {
-    const res = await fetch(API_URL, {
+    const res = await fetchBatasWaktu(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'login', username, password })
-    });
+    }, 25);
     const json = await res.json();
     if (json && json.success) {
       currentUser = { username, password, salesScope: json.salesScope || '' };
@@ -2631,7 +2727,9 @@ async function attemptLogin(username, password) {
       errorBox.textContent = 'Username atau password salah.';
     }
   } catch (e) {
-    errorBox.textContent = 'Gagal menghubungi server. Cek URL API atau koneksi internet.';
+    errorBox.textContent = (e && e.name === 'AbortError')
+      ? 'Server tidak menjawab (lebih dari 25 detik). Buka Apps Script > menu Eksekusi, hentikan proses yang masih berjalan, lalu coba lagi.'
+      : 'Gagal menghubungi server. Cek URL API atau koneksi internet.';
   }
   btn.textContent = 'Masuk';
   btn.disabled = false;

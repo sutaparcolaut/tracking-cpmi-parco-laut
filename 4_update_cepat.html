@@ -957,6 +957,12 @@ async function terapkanUpdate(record, parsed) {
       pesanBerhasil = `${parsed.field.label} diisi tanggal ${fmtTanggalIndo(today)}`;
       labelSuara = parsed.field.label;
     }
+    // Begitu MCU diisi, berarti prosesnya sudah berjalan -- status "Belum dapat majikan"
+    // otomatis naik jadi "Sedang berjalan" (sama seperti di aplikasi utama).
+    if (parsed.field.field === 'mcu' && updated.status === 'belummajikan') {
+      updated.status = 'berjalan';
+      pesanBerhasil += ', status jadi "Berjalan"';
+    }
   }
   if (parsed.status) {
     updated.status = parsed.status.status;
