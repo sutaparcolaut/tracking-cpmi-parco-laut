@@ -1295,6 +1295,13 @@ function isOppOverdue(r) {
   return r.ec && !r.opp && d !== null && d >= 60;
 }
 
+// Pengingat 5: Sales sudah ditentukan (berarti majikan sudah ada), tapi majikan
+// belum tanda tangan. Perlu dikejar untuk kepastian dan pembayaran.
+function isBelumTtd(r) {
+  if (sudahMundur(r)) return false;
+  return !!String(r.sales || '').trim() && !String(r.ttdmajikan || '').trim();
+}
+
 // Menyeragamkan penulisan noreg khusus untuk PEMBANDINGAN saja.
 // Tujuannya: "6893", " 6893 ", dan "L6893" dianggap nomor yang SAMA, karena
 // dalam praktiknya itu memang orang yang sama (cuma beda cara penulisan).
@@ -1483,7 +1490,7 @@ function renderDashboard() {
   const belumMajikan = records.filter(r => r.status === 'belummajikan').length;
   const pending = records.filter(r => r.status === 'pending').length;
   // Proses sudah selesai tapi majikan belum tanda tangan -> perlu dikejar soal pembayaran
-  const belumTtd = records.filter(r => r.status === 'selesai' && !r.ttdmajikan).length;
+  const belumTtd = records.filter(isBelumTtd).length;
   const batal = records.filter(r => r.status === 'batal').length;
   const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r)).length;
   const penempatan = records.filter(r => !!r.terbang).length;
@@ -1526,7 +1533,7 @@ function render() {
   if (statusFilter === 'berjalan') filtered = filtered.filter(r => r.status === 'berjalan');
   else if (statusFilter === 'belummajikan') filtered = filtered.filter(r => r.status === 'belummajikan');
   else if (statusFilter === 'pending') filtered = filtered.filter(r => r.status === 'pending');
-  else if (statusFilter === 'belumttd') filtered = filtered.filter(r => r.status === 'selesai' && !r.ttdmajikan);
+  else if (statusFilter === 'belumttd') filtered = filtered.filter(isBelumTtd);
   else if (statusFilter === 'selesai') filtered = filtered.filter(r => r.status === 'selesai');
   else if (statusFilter === 'batal') filtered = filtered.filter(r => r.status === 'batal');
   else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r));
