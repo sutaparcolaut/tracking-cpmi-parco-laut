@@ -734,7 +734,7 @@
 <table>
   <thead>
     <tr>
-      <th>No.</th><th class="col-extra">No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Tanggal Lahir</th><th class="col-extra">Alamat</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
+      <th>No.</th><th class="col-extra">No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Tanggal Lahir</th><th class="col-extra">Usia</th><th class="col-extra">Alamat</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
       <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Medical</th><th>Rekom ID</th><th>Paspor</th>
       <th>Status</th><th>Tanggal EC</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th>Dokumen</th><th></th>
     </tr>
@@ -905,6 +905,22 @@ const PAGE_SIZE = 5;
 let statusFilter = 'all'; // all | berjalan | selesai | batal | alert
 let editingId = null;
 let currentUser = null; // { username, password } - dipakai untuk verifikasi di setiap request
+
+// Menghitung usia dari tanggal lahir sampai hari ini.
+// Dihitung otomatis setiap kali tampilan dimuat, jadi tidak perlu diinput manual
+// dan tidak akan basi seiring waktu.
+function hitungUsia(tglLahir) {
+  if (!tglLahir) return null;
+  const lahir = new Date(tglLahir + 'T00:00:00');
+  if (isNaN(lahir.getTime())) return null;
+  const kini = new Date();
+  let usia = kini.getFullYear() - lahir.getFullYear();
+  const belumUlangTahun =
+    kini.getMonth() < lahir.getMonth() ||
+    (kini.getMonth() === lahir.getMonth() && kini.getDate() < lahir.getDate());
+  if (belumUlangTahun) usia--;
+  return (usia >= 0 && usia < 120) ? usia : null;
+}
 
 function fmtDate(d) {
   if (!d) return '-';
@@ -1526,7 +1542,7 @@ function render() {
   const pageItems = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
   if (filtered.length === 0) {
-    body.innerHTML = '<tr><td colspan="24" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
+    body.innerHTML = '<tr><td colspan="25" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
   } else {
     body.innerHTML = pageItems.map((r, i) => {
       const alert = isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r);
@@ -1536,6 +1552,7 @@ function render() {
         <td class="col-extra">${r.noreg || '-'}</td>
         <td class="col-nama"><strong>${r.nama}</strong></td>
         <td class="col-extra">${fmtDate(r.tgllahir)}</td>
+        <td class="col-extra">${hitungUsia(r.tgllahir) !== null ? hitungUsia(r.tgllahir) + ' th' : '-'}</td>
         <td class="col-extra" style="max-width:90px;">${alamatCell(r)}</td>
         <td class="col-extra">${r.kabupaten || '-'}</td>
         <td class="col-extra">${r.keterangan || '-'}</td>
@@ -1746,7 +1763,7 @@ function exportToExcel() {
     return;
   }
 
-  const headers = ['No.Register','Nama CPMI','Tanggal Lahir','Alamat','Kabupaten','Kontak','Sales','Tgl Daftar','Status Majikan','Tgl MCU','Hasil Medical','Rekom ID','Status Paspor','Status','Tgl EC','Tgl OPP','Tgl Terbang','Catatan'];
+  const headers = ['No.Register','Nama CPMI','Tanggal Lahir','Usia','Alamat','Kabupaten','Kontak','Sales','Tgl Daftar','Status Majikan','Tgl MCU','Hasil Medical','Rekom ID','Status Paspor','Status','Tgl EC','Tgl OPP','Tgl Terbang','Catatan'];
 
   const THIN = { style: 'thin', color: { rgb: 'B9C7D6' } };
   const BORDER_ALL = { top: THIN, bottom: THIN, left: THIN, right: THIN };
@@ -1773,6 +1790,7 @@ function exportToExcel() {
       { v: r.noreg || '-', s: style },
       { v: r.nama || '-', s: Object.assign({}, style, { font: Object.assign({}, style.font, { bold: true }) }) },
       { v: fmtDate(r.tgllahir), s: style },
+      { v: hitungUsia(r.tgllahir) !== null ? hitungUsia(r.tgllahir) : '', s: style },
       { v: r.alamat || '-', s: style },
       { v: r.kabupaten || '-', s: style },
       { v: r.telp || '-', s: style },
@@ -1797,7 +1815,7 @@ function exportToExcel() {
     { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } }
   ];
   ws['!cols'] = [
-    { wch: 14 }, { wch: 24 }, { wch: 13 }, { wch: 26 }, { wch: 13 }, { wch: 15 }, { wch: 10 },
+    { wch: 14 }, { wch: 24 }, { wch: 13 }, { wch: 7 }, { wch: 26 }, { wch: 13 }, { wch: 15 }, { wch: 10 },
     { wch: 13 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 13 },
     { wch: 12 }, { wch: 12 }, { wch: 13 }, { wch: 24 }
   ];
