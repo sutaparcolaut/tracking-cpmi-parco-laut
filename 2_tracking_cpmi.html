@@ -180,6 +180,32 @@
 
   /* ===== Kalender kustom (DD/MM/YYYY tetap, tidak ikut bahasa HP) ===== */
   input.date-picker-input { cursor: pointer; background: #fff; }
+  /* Sel "Data Penempatan" yang bisa dibuka-tutup */
+  .pn-wrap { min-width: 165px; }
+  .pn-toggle {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--blue-50); color: var(--navy-800); font-size: 11px;
+    font-weight: 600; cursor: pointer; text-align: left;
+  }
+  .pn-toggle:hover { border-color: var(--blue-500); background: var(--blue-100); }
+  .pn-toggle > span:first-child { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pn-badge {
+    background: #fff; border: 1px solid var(--border); border-radius: 999px;
+    padding: 1px 6px; font-size: 9.5px; color: var(--muted); flex-shrink: 0;
+  }
+  .pn-arrow { font-size: 9px; transition: transform .15s ease; flex-shrink: 0; }
+  .pn-wrap.open .pn-arrow { transform: rotate(180deg); }
+  .pn-detail { display: none; margin-top: 6px; }
+  .pn-wrap.open .pn-detail { display: block; }
+  .pn-baris {
+    display: flex; justify-content: space-between; gap: 10px;
+    padding: 3px 8px; font-size: 11px; border-bottom: 1px dashed var(--border);
+  }
+  .pn-baris:last-child { border-bottom: 0; }
+  .pn-baris span { color: var(--muted); white-space: nowrap; }
+  .pn-baris b { color: var(--text); text-align: right; }
+
   /* ===== Menu dropdown "Dokumen" -- kumpulan semua tombol cetak surat jadi satu ===== */
   .doc-menu-wrap { position: relative; display: inline-block; }
   .doc-menu-btn {
@@ -356,6 +382,17 @@
     background: rgba(255,255,255,.65); color: var(--navy-900); border: 1px solid rgba(51,130,201,.3);
     font-size: 12.5px; padding: 7px 13px; backdrop-filter: blur(4px);
   }
+  .user-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--blue-100); border: 1px solid var(--border);
+    color: var(--navy-900); font-size: 12px; font-weight: 700; white-space: nowrap;
+  }
+  .user-chip .uc-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #22c55e; flex-shrink: 0;
+  }
+  .user-chip .uc-peran { font-weight: 600; color: var(--muted); font-size: 11px; }
+
   .btn-ghost:hover { background: #fff; border-color: var(--gold); }
 
   /* ===== Summary view ===== */
@@ -632,6 +669,7 @@
       <button class="btn-ghost" id="refreshBtn" title="Ambil data terbaru dari Google Sheets">🔄 Refresh</button>
       <button class="btn-ghost" id="dashboardToggleBtn">Sembunyikan Dashboard</button>
       <button class="btn-ghost" id="summaryToggleBtn">Ringkasan</button>
+      <span id="userChip" class="user-chip" style="display:none;"></span>
       <button class="btn-ghost" id="logoutBtn">Keluar</button>
     </div>
   </div>
@@ -736,7 +774,7 @@
     <tr>
       <th>No.</th><th class="col-extra">No. Register</th><th class="col-nama">Nama CPMI</th><th class="col-extra">Tanggal Lahir</th><th class="col-extra">Usia</th><th class="col-extra">Alamat</th><th class="col-extra">Cabang</th><th class="col-extra">Kabupaten</th><th class="col-extra">Keterangan</th><th class="col-extra">Kontak</th><th class="col-extra">Password SISKOP2MI</th>
       <th>Daftar</th><th>Sales</th><th>Status Majikan</th><th class="col-extra">Tgl TTD Majikan</th><th>MCU</th><th>Medical</th><th>Rekom ID</th><th>Paspor</th>
-      <th>Status</th><th>Tanggal EC</th><th class="col-extra">Tanggal OPP</th><th class="col-extra">Tanggal Terbang</th><th class="col-extra">Catatan Penempatan</th><th>Dokumen</th><th></th>
+      <th>Status</th><th>Kirim Dokumen</th><th>Data Penempatan</th><th class="col-extra">Catatan Penempatan</th><th>Dokumen</th><th></th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
@@ -815,14 +853,148 @@
     </select>
     <label>Kabupaten</label>
     <select id="f_kabupaten">
-      <option value="">- Pilih Kabupaten -</option>
-      <option value="Indramayu">Indramayu</option>
-      <option value="Cirebon">Cirebon</option>
-      <option value="Majalengka">Majalengka</option>
-      <option value="Kuningan">Kuningan</option>
-      <option value="Subang">Subang</option>
-      <option value="Sumedang">Sumedang</option>
-      <option value="Lainnya">Lainnya</option>
+      <option value="">- Pilih Kabupaten / Kota -</option>
+      <optgroup label="Jawa Barat">
+        <option value="Bandung">Bandung</option>
+        <option value="Bandung Barat">Bandung Barat</option>
+        <option value="Bekasi">Bekasi</option>
+        <option value="Bogor">Bogor</option>
+        <option value="Ciamis">Ciamis</option>
+        <option value="Cianjur">Cianjur</option>
+        <option value="Cirebon">Cirebon</option>
+        <option value="Garut">Garut</option>
+        <option value="Indramayu">Indramayu</option>
+        <option value="Karawang">Karawang</option>
+        <option value="Kuningan">Kuningan</option>
+        <option value="Majalengka">Majalengka</option>
+        <option value="Pangandaran">Pangandaran</option>
+        <option value="Purwakarta">Purwakarta</option>
+        <option value="Subang">Subang</option>
+        <option value="Sukabumi">Sukabumi</option>
+        <option value="Sumedang">Sumedang</option>
+        <option value="Tasikmalaya">Tasikmalaya</option>
+        <option value="Kota Bandung">Kota Bandung</option>
+        <option value="Kota Banjar">Kota Banjar</option>
+        <option value="Kota Bekasi">Kota Bekasi</option>
+        <option value="Kota Bogor">Kota Bogor</option>
+        <option value="Kota Cimahi">Kota Cimahi</option>
+        <option value="Kota Cirebon">Kota Cirebon</option>
+        <option value="Kota Depok">Kota Depok</option>
+        <option value="Kota Sukabumi">Kota Sukabumi</option>
+        <option value="Kota Tasikmalaya">Kota Tasikmalaya</option>
+      </optgroup>
+      <optgroup label="Jawa Tengah">
+        <option value="Banjarnegara">Banjarnegara</option>
+        <option value="Banyumas">Banyumas</option>
+        <option value="Batang">Batang</option>
+        <option value="Blora">Blora</option>
+        <option value="Boyolali">Boyolali</option>
+        <option value="Brebes">Brebes</option>
+        <option value="Cilacap">Cilacap</option>
+        <option value="Demak">Demak</option>
+        <option value="Grobogan">Grobogan</option>
+        <option value="Jepara">Jepara</option>
+        <option value="Karanganyar">Karanganyar</option>
+        <option value="Kebumen">Kebumen</option>
+        <option value="Kendal">Kendal</option>
+        <option value="Klaten">Klaten</option>
+        <option value="Kudus">Kudus</option>
+        <option value="Magelang">Magelang</option>
+        <option value="Pati">Pati</option>
+        <option value="Pekalongan">Pekalongan</option>
+        <option value="Pemalang">Pemalang</option>
+        <option value="Purbalingga">Purbalingga</option>
+        <option value="Purworejo">Purworejo</option>
+        <option value="Rembang">Rembang</option>
+        <option value="Semarang">Semarang</option>
+        <option value="Sragen">Sragen</option>
+        <option value="Sukoharjo">Sukoharjo</option>
+        <option value="Tegal">Tegal</option>
+        <option value="Temanggung">Temanggung</option>
+        <option value="Wonogiri">Wonogiri</option>
+        <option value="Wonosobo">Wonosobo</option>
+        <option value="Kota Magelang">Kota Magelang</option>
+        <option value="Kota Pekalongan">Kota Pekalongan</option>
+        <option value="Kota Salatiga">Kota Salatiga</option>
+        <option value="Kota Semarang">Kota Semarang</option>
+        <option value="Kota Surakarta">Kota Surakarta</option>
+        <option value="Kota Tegal">Kota Tegal</option>
+      </optgroup>
+      <optgroup label="Jawa Timur">
+        <option value="Bangkalan">Bangkalan</option>
+        <option value="Banyuwangi">Banyuwangi</option>
+        <option value="Blitar">Blitar</option>
+        <option value="Bojonegoro">Bojonegoro</option>
+        <option value="Bondowoso">Bondowoso</option>
+        <option value="Gresik">Gresik</option>
+        <option value="Jember">Jember</option>
+        <option value="Jombang">Jombang</option>
+        <option value="Kediri">Kediri</option>
+        <option value="Lamongan">Lamongan</option>
+        <option value="Lumajang">Lumajang</option>
+        <option value="Madiun">Madiun</option>
+        <option value="Magetan">Magetan</option>
+        <option value="Malang">Malang</option>
+        <option value="Mojokerto">Mojokerto</option>
+        <option value="Nganjuk">Nganjuk</option>
+        <option value="Ngawi">Ngawi</option>
+        <option value="Pacitan">Pacitan</option>
+        <option value="Pamekasan">Pamekasan</option>
+        <option value="Pasuruan">Pasuruan</option>
+        <option value="Ponorogo">Ponorogo</option>
+        <option value="Probolinggo">Probolinggo</option>
+        <option value="Sampang">Sampang</option>
+        <option value="Sidoarjo">Sidoarjo</option>
+        <option value="Situbondo">Situbondo</option>
+        <option value="Sumenep">Sumenep</option>
+        <option value="Trenggalek">Trenggalek</option>
+        <option value="Tuban">Tuban</option>
+        <option value="Tulungagung">Tulungagung</option>
+        <option value="Kota Batu">Kota Batu</option>
+        <option value="Kota Blitar">Kota Blitar</option>
+        <option value="Kota Kediri">Kota Kediri</option>
+        <option value="Kota Madiun">Kota Madiun</option>
+        <option value="Kota Malang">Kota Malang</option>
+        <option value="Kota Mojokerto">Kota Mojokerto</option>
+        <option value="Kota Pasuruan">Kota Pasuruan</option>
+        <option value="Kota Probolinggo">Kota Probolinggo</option>
+        <option value="Kota Surabaya">Kota Surabaya</option>
+      </optgroup>
+      <optgroup label="Banten">
+        <option value="Lebak">Lebak</option>
+        <option value="Pandeglang">Pandeglang</option>
+        <option value="Serang">Serang</option>
+        <option value="Tangerang">Tangerang</option>
+        <option value="Kota Cilegon">Kota Cilegon</option>
+        <option value="Kota Serang">Kota Serang</option>
+        <option value="Kota Tangerang">Kota Tangerang</option>
+        <option value="Kota Tangerang Selatan">Kota Tangerang Selatan</option>
+      </optgroup>
+      <optgroup label="DI Yogyakarta">
+        <option value="Bantul">Bantul</option>
+        <option value="Gunungkidul">Gunungkidul</option>
+        <option value="Kulon Progo">Kulon Progo</option>
+        <option value="Sleman">Sleman</option>
+        <option value="Kota Yogyakarta">Kota Yogyakarta</option>
+      </optgroup>
+      <optgroup label="DKI Jakarta">
+        <option value="Jakarta Barat">Jakarta Barat</option>
+        <option value="Jakarta Pusat">Jakarta Pusat</option>
+        <option value="Jakarta Selatan">Jakarta Selatan</option>
+        <option value="Jakarta Timur">Jakarta Timur</option>
+        <option value="Jakarta Utara">Jakarta Utara</option>
+        <option value="Kepulauan Seribu">Kepulauan Seribu</option>
+      </optgroup>
+      <optgroup label="Luar Jawa / Lainnya">
+        <option value="Lampung">Lampung</option>
+        <option value="Sumatera">Sumatera</option>
+        <option value="Kalimantan">Kalimantan</option>
+        <option value="Sulawesi">Sulawesi</option>
+        <option value="Bali">Bali</option>
+        <option value="NTB">NTB</option>
+        <option value="NTT">NTT</option>
+        <option value="Lainnya">Lainnya</option>
+      </optgroup>
     </select>
     <label>Keterangan</label><input id="f_keterangan" type="text" />
     <label>Email</label><input id="f_email" type="text" />
@@ -891,6 +1063,11 @@
       <option value="selesai">Proses selesai</option>
       <option value="batal">Batal / mundur</option>
     </select>
+    <label>Tanggal Kirim Dokumen</label><input id="f_kirimdokumen" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
+    <label>No. Paspor</label><input id="f_nopaspor" type="text" />
+    <label>No. EC</label><input id="f_noec" type="text" />
+    <label>No. Visa</label><input id="f_novisa" type="text" />
+    <label>Nama Majikan</label><input id="f_namamajikan" type="text" />
     <label>Tanggal EC</label><input id="f_ec" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Tanggal OPP</label><input id="f_opp" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
     <label>Tanggal Terbang</label><input id="f_terbang" type="text" class="date-picker-input" placeholder="DD/MM/YYYY" inputmode="numeric" />
@@ -1103,6 +1280,46 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Sel "Data Penempatan": tampil ringkas supaya tabel tidak kepanjangan.
+// Diklik -> terbuka menampilkan seluruh rinciannya (Tgl EC, No.EC, Tgl OPP,
+// No.Paspor, No.Visa, Nama Majikan, Tgl Terbang).
+function selPenempatan(r) {
+  const isi = [
+    ['Tanggal EC',    fmtDate(r.ec)],
+    ['No. EC',        r.noec || '-'],
+    ['Tanggal OPP',   fmtDate(r.opp)],
+    ['No. Paspor',    r.nopaspor || '-'],
+    ['No. Visa',      r.novisa || '-'],
+    ['Nama Majikan',  r.namamajikan || '-'],
+    ['Tanggal Terbang', fmtDate(r.terbang)]
+  ];
+  const terisi = isi.filter(x => x[1] && x[1] !== '-').length;
+
+  // ringkasan singkat: tahap terjauh yang sudah tercapai
+  let ringkas = 'Belum ada data';
+  if (r.terbang) ringkas = 'Terbang ' + fmtDate(r.terbang);
+  else if (r.opp) ringkas = 'OPP ' + fmtDate(r.opp);
+  else if (r.ec) ringkas = 'EC ' + fmtDate(r.ec);
+
+  const rincian = isi.map(x =>
+    `<div class="pn-baris"><span>${x[0]}</span><b>${x[1] || '-'}</b></div>`).join('');
+
+  return `
+    <div class="pn-wrap">
+      <button type="button" class="pn-toggle" onclick="togglePenempatan(this)">
+        <span>${ringkas}</span>
+        <span class="pn-badge">${terisi}/7</span>
+        <span class="pn-arrow">▾</span>
+      </button>
+      <div class="pn-detail">${rincian}</div>
+    </div>`;
+}
+
+window.togglePenempatan = function(tombol) {
+  const wrap = tombol.parentElement;
+  wrap.classList.toggle('open');
+};
+
 function statusBadge(status) {
   const map = {
     berjalan: { cls: 'status-berjalan', label: 'Berjalan' },
@@ -1307,7 +1524,14 @@ function isOppOverdue(r) {
   return r.ec && !r.opp && d !== null && d >= 60;
 }
 
-// Pengingat 5: Sales sudah ditentukan (berarti majikan sudah ada), tapi majikan
+// Pengingat 5: sudah 7 hari sejak OPP, tapi belum ada jadwal penerbangan
+function isTerbangOverdue(r) {
+  if (sudahMundur(r)) return false;
+  const d = daysSince(r.opp);
+  return r.opp && !r.terbang && d !== null && d >= 7;
+}
+
+// Pengingat 6: Sales sudah ditentukan (berarti majikan sudah ada), tapi majikan
 // belum tanda tangan. Perlu dikejar untuk kepastian dan pembayaran.
 function isBelumTtd(r) {
   if (sudahMundur(r)) return false;
@@ -1391,9 +1615,10 @@ function renderReminders() {
   const mcuList = records.filter(isMcuOverdue);
   const ecList = records.filter(isEcOverdue);
   const oppList = records.filter(isOppOverdue);
+  const terbangList = records.filter(isTerbangOverdue);
   const gandaList = cariNoregGanda();
   const box = document.getElementById('reminderBox');
-  if (mcuList.length === 0 && ecList.length === 0 && oppList.length === 0 && gandaList.length === 0) {
+  if (mcuList.length === 0 && ecList.length === 0 && oppList.length === 0 && terbangList.length === 0 && gandaList.length === 0) {
     box.innerHTML = '';
     return;
   }
@@ -1415,6 +1640,12 @@ function renderReminders() {
   if (ecList.length > 0) {
     html += `<div class="reminder-box"><h4>⚠ Sudah 7+ hari status Selesai, belum masuk EC (${ecList.length})</h4><ul>` +
       ecList.map(r => `<li>${r.nama} — Selesai ${daysSince(r.selesaiDate)} hari lalu</li>`).join('') +
+      `</ul></div>`;
+  }
+  if (terbangList.length > 0) {
+    html += `<div class="reminder-box"><h4>⚠ Sudah 7+ hari sejak OPP, belum ada jadwal terbang (${terbangList.length})</h4><ul>` +
+      terbangList.slice(0, 30).map(r => `<li>${r.nama} — OPP ${daysSince(r.opp)} hari lalu</li>`).join('') +
+      (terbangList.length > 30 ? `<li>...dan ${terbangList.length - 30} lainnya</li>` : '') +
       `</ul></div>`;
   }
   if (oppList.length > 0) {
@@ -1504,7 +1735,7 @@ function renderDashboard() {
   // Proses sudah selesai tapi majikan belum tanda tangan -> perlu dikejar soal pembayaran
   const belumTtd = records.filter(isBelumTtd).length;
   const batal = records.filter(r => r.status === 'batal').length;
-  const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r)).length;
+  const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isNoregGanda(r)).length;
   const penempatan = records.filter(r => !!r.terbang).length;
 
   document.getElementById('statTotal').textContent = total;
@@ -1548,7 +1779,7 @@ function render() {
   else if (statusFilter === 'belumttd') filtered = filtered.filter(isBelumTtd);
   else if (statusFilter === 'selesai') filtered = filtered.filter(r => r.status === 'selesai');
   else if (statusFilter === 'batal') filtered = filtered.filter(r => r.status === 'batal');
-  else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r));
+  else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isNoregGanda(r));
   else if (statusFilter === 'penempatan') filtered = filtered.filter(r => !!r.terbang);
   lastFiltered = filtered;
   const body = document.getElementById('tableBody');
@@ -1561,10 +1792,10 @@ function render() {
   const pageItems = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
   if (filtered.length === 0) {
-    body.innerHTML = '<tr><td colspan="26" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
+    body.innerHTML = '<tr><td colspan="25" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
   } else {
     body.innerHTML = pageItems.map((r, i) => {
-      const alert = isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isNoregGanda(r);
+      const alert = isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isNoregGanda(r);
       return `
       <tr class="${alert ? 'row-alert' : ''}">
         <td>${startIdx + i + 1}</td>
@@ -1587,9 +1818,8 @@ function render() {
         <td>${fmtDate(r.rekom)}</td>
         <td>${pasporCell(r)}</td>
         <td>${statusBadge(r.status)}${r.status === 'selesai' ? `<br/><span style="font-size:10px; color:var(--muted);">Selesai: ${fmtDate(r.selesaiDate)}</span><br/><button onclick="kirimWaSales('${r.id}')" style="margin-top:4px; padding:3px 7px; font-size:10px;">📞 Hubungi Sales</button>` : ''}</td>
-        <td>${fmtDate(r.ec)}</td>
-        <td class="col-extra">${fmtDate(r.opp)}</td>
-        <td class="col-extra">${fmtDate(r.terbang)}</td>
+        <td>${fmtDate(r.kirimdokumen)}</td>
+        <td>${selPenempatan(r)}</td>
         <td class="col-extra">${r.catatan || '-'}</td>
         <td>${dokumenCell(r)}</td>
         <td class="actions">
@@ -1619,6 +1849,69 @@ function render() {
   document.getElementById('pageLastBtn').onclick = () => { currentPage = totalPages; render(); };
 }
 
+// Menampilkan cakupan akses akun di bawah judul, supaya jelas siapa melihat apa.
+// Menampilkan nama staf yang sedang login di header, supaya jelas
+// sedang memakai akun siapa (penting kalau satu komputer dipakai bergantian).
+function tampilkanChipUser() {
+  const chip = document.getElementById('userChip');
+  if (!chip || !currentUser) return;
+  const nama = currentUser.nama || currentUser.username || '-';
+  const role = String(currentUser.role || '').toLowerCase();
+  const cab = String(currentUser.cabangScope || '').trim();
+
+  let peran = '';
+  if (role === 'penempatan') peran = 'Staf Penempatan';
+  else if (['SEMUA','*','ALL'].includes(cab.toUpperCase())) peran = 'Administrator';
+  else if (cab) peran = cab;
+
+  chip.innerHTML = `<span class="uc-dot"></span>${nama}` +
+    (peran ? ` <span class="uc-peran">· ${peran}</span>` : '');
+  chip.style.display = 'inline-flex';
+}
+
+function tampilkanScopeNotice() {
+  const cab = String(currentUser && currentUser.cabangScope || '').trim();
+  const isAdminSemua = ['SEMUA', '*', 'ALL'].includes(cab.toUpperCase());
+  const isPenempatan = String(currentUser && currentUser.role || '').toLowerCase() === 'penempatan';
+  const bagian = [];
+  if (isPenempatan) bagian.push('Staf Penempatan — semua cabang & pusat');
+  else if (isAdminSemua) bagian.push('Administrator — semua cabang');
+  else if (cab) bagian.push(`Cabang: ${cab}`);
+  else bagian.push('⚠ Akun belum diatur cabangnya — hubungi administrator');
+  if (currentUser && currentUser.salesScope) bagian.push(`Sales: ${currentUser.salesScope}`);
+
+  const nt = document.getElementById('scopeNotice');
+  nt.style.display = 'block';
+  nt.textContent = (isAdminSemua || isPenempatan)
+    ? `Akses: ${bagian.join(' · ')}`
+    : `Akun ini hanya menampilkan data — ${bagian.join(' · ')}`;
+}
+
+// Staf Penempatan hanya mengerjakan tahap penempatan. Supaya tidak bingung,
+// form Edit hanya menampilkan kolom yang memang jadi tugasnya.
+const FIELD_PENEMPATAN = ['f_ec','f_noec','f_opp','f_nopaspor','f_novisa','f_namamajikan','f_terbang'];
+
+function terapkanFormPeran() {
+  const modal = document.getElementById('modal');
+  if (!modal) return;
+  const isPenempatan = String(currentUser && currentUser.role || '').toLowerCase() === 'penempatan';
+
+  // Semua isian di dalam form, beserta label yang menempel tepat sebelumnya.
+  const semuaIsian = Array.from(modal.querySelectorAll('input, select, textarea'));
+
+  semuaIsian.forEach(isian => {
+    const label = isian.previousElementSibling && isian.previousElementSibling.tagName === 'LABEL'
+      ? isian.previousElementSibling : null;
+    const sembunyi = isPenempatan && !FIELD_PENEMPATAN.includes(isian.id);
+    isian.style.display = sembunyi ? 'none' : '';
+    if (label) label.style.display = sembunyi ? 'none' : '';
+  });
+
+  // Judul form disesuaikan supaya jelas maksudnya
+  const judul = document.getElementById('modalTitle');
+  if (isPenempatan && judul) judul.textContent = 'Lengkapi Data Penempatan';
+}
+
 function openModal(record) {
   editingId = record ? record.id : null;
   document.getElementById('modalTitle').textContent = record ? 'Edit CPMI' : 'Tambah CPMI';
@@ -1627,9 +1920,11 @@ function openModal(record) {
   setDateField('f_tgllahir', record ? record.tgllahir : '');
   document.getElementById('f_alamat').value = record ? record.alamat : '';
   const cabangField = document.getElementById('f_cabang');
-  cabangField.value = record ? (record.cabang || '') : (currentUser && currentUser.cabangScope ? currentUser.cabangScope : 'Indramayu');
-  // Akun cabang tidak boleh memindah CPMI ke cabang lain -> pilihannya dikunci
-  cabangField.disabled = !!(currentUser && currentUser.cabangScope);
+  const cabangAkun = String(currentUser && currentUser.cabangScope || '').trim();
+  const adminSemua = ['SEMUA','*','ALL'].includes(cabangAkun.toUpperCase());
+  cabangField.value = record ? (record.cabang || '') : (adminSemua ? 'Indramayu' : cabangAkun);
+  // Hanya administrator yang boleh memilih cabang; staf cabang terkunci ke cabangnya
+  cabangField.disabled = !adminSemua;
   document.getElementById('f_kabupaten').value = record ? record.kabupaten : '';
   document.getElementById('f_keterangan').value = record ? record.keterangan : '';
   document.getElementById('f_email').value = record ? record.email : '';
@@ -1638,15 +1933,7 @@ function openModal(record) {
   setDateField('f_daftar', record ? record.daftar : '');
   // Akun yang dibatasi ke satu Sales tertentu: field Sales otomatis terisi namanya sendiri dan terkunci
   const salesField = document.getElementById('f_sales');
-  const bagian = [];
-  if (currentUser && currentUser.cabangScope) bagian.push(`Cabang: ${currentUser.cabangScope}`);
-  if (currentUser && currentUser.salesScope) bagian.push(`Sales: ${currentUser.salesScope}`);
-  if (bagian.length) {
-    const nt = document.getElementById('scopeNotice');
-    nt.style.display = 'block';
-    nt.textContent = `Akun ini hanya menampilkan data — ${bagian.join(' · ')}`;
-  }
-  if (false && currentUser && currentUser.salesScope) {
+  if (currentUser && currentUser.salesScope) {
     salesField.value = currentUser.salesScope;
     salesField.disabled = true;
   } else {
@@ -1671,7 +1958,13 @@ function openModal(record) {
   setDateField('f_opp', record ? record.opp : '');
   setDateField('f_terbang', record ? record.terbang : '');
   document.getElementById('f_catatan').value = record ? record.catatan : '';
+  setDateField('f_kirimdokumen', record ? record.kirimdokumen : '');
+  document.getElementById('f_nopaspor').value = record ? (record.nopaspor || '') : '';
+  document.getElementById('f_noec').value = record ? (record.noec || '') : '';
+  document.getElementById('f_novisa').value = record ? (record.novisa || '') : '';
+  document.getElementById('f_namamajikan').value = record ? (record.namamajikan || '') : '';
   setDateField('f_ec', record ? record.ec : '');
+  terapkanFormPeran();
   document.getElementById('modalOverlay').style.display = 'flex';
 }
 
@@ -1795,7 +2088,7 @@ function exportToExcel() {
     return;
   }
 
-  const headers = ['No.Register','Nama CPMI','Tanggal Lahir','Usia','Alamat','Cabang','Kabupaten','Kontak','Sales','Tgl Daftar','Status Majikan','Tgl MCU','Hasil Medical','Rekom ID','Status Paspor','Status','Tgl EC','Tgl OPP','Tgl Terbang','Catatan'];
+  const headers = ['No.Register','Nama CPMI','Tanggal Lahir','Usia','Alamat','Cabang','Kabupaten','Kontak','Sales','Tgl Daftar','Status Majikan','Tgl MCU','Hasil Medical','Rekom ID','Status Paspor','Status','Tgl Kirim Dokumen','No. Paspor','No. EC','No. Visa','Nama Majikan','Tgl EC','Tgl OPP','Tgl Terbang','Catatan'];
 
   const THIN = { style: 'thin', color: { rgb: 'B9C7D6' } };
   const BORDER_ALL = { top: THIN, bottom: THIN, left: THIN, right: THIN };
@@ -1834,6 +2127,11 @@ function exportToExcel() {
       { v: fmtDate(r.rekom), s: style },
       { v: r.statuspaspor === 'Ready' ? 'Ready' : (r.statuspaspor === 'Perpanjang' ? `Perpanjang (${fmtDate(r.tglpaspor)})` : '-'), s: style },
       { v: statusLabels[r.status] || r.status || '-', s: statusStyle },
+      { v: fmtDate(r.kirimdokumen), s: style },
+      { v: r.nopaspor || '', s: style },
+      { v: r.noec || '', s: style },
+      { v: r.novisa || '', s: style },
+      { v: r.namamajikan || '', s: style },
       { v: fmtDate(r.ec), s: style },
       { v: fmtDate(r.opp), s: style },
       { v: fmtDate(r.terbang), s: style },
@@ -1849,7 +2147,7 @@ function exportToExcel() {
   ws['!cols'] = [
     { wch: 14 }, { wch: 24 }, { wch: 13 }, { wch: 7 }, { wch: 26 }, { wch: 12 }, { wch: 13 }, { wch: 15 }, { wch: 10 },
     { wch: 13 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 13 },
-    { wch: 12 }, { wch: 12 }, { wch: 13 }, { wch: 24 }
+    { wch: 15 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 12 }, { wch: 12 }, { wch: 13 }, { wch: 24 }
   ];
   ws['!freeze'] = { xSplit: 0, ySplit: 4 };
   ws['!autofilter'] = { ref: `A4:${String.fromCharCode(65 + headers.length - 1)}4` };
@@ -2523,6 +2821,11 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     opp: getDateField('f_opp'),
     terbang: getDateField('f_terbang'),
     catatan: document.getElementById('f_catatan').value.trim(),
+    kirimdokumen: getDateField('f_kirimdokumen'),
+    nopaspor: document.getElementById('f_nopaspor').value.trim(),
+    noec: document.getElementById('f_noec').value.trim(),
+    novisa: document.getElementById('f_novisa').value.trim(),
+    namamajikan: document.getElementById('f_namamajikan').value.trim(),
     ec: getDateField('f_ec'),
     selesaiDate
   };
@@ -2710,12 +3013,12 @@ function playLoginTransition(onDone) {
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appContent').style.display = 'block';
-  const notice = document.getElementById('scopeNotice');
-  if (currentUser && currentUser.salesScope) {
-    notice.style.display = 'block';
-    notice.textContent = `Akun ini hanya menampilkan CPMI dari Sales: ${currentUser.salesScope}`;
-  } else {
-    notice.style.display = 'none';
+  tampilkanScopeNotice();
+  tampilkanChipUser();
+  // Staf Penempatan tidak menambah/menghapus CPMI, jadi tombol Tambah disembunyikan
+  if (String(currentUser && currentUser.role || '').toLowerCase() === 'penempatan') {
+    const tb = document.getElementById('addBtn');
+    if (tb) tb.style.display = 'none';
   }
   loadData();
 }
@@ -2782,7 +3085,7 @@ async function attemptLogin(username, password) {
     }, 25);
     const json = await res.json();
     if (json && json.success) {
-      currentUser = { username, password, salesScope: json.salesScope || '', cabangScope: json.cabangScope || '' };
+      currentUser = { username, password, salesScope: json.salesScope || '', cabangScope: json.cabangScope || '', nama: json.nama || '', role: (json.role || '').toLowerCase() };
       sessionStorage.setItem('cpmi_user', JSON.stringify(currentUser));
       playLoginTransition(showApp);
     } else {
@@ -2814,7 +3117,16 @@ document.getElementById('loginPass').addEventListener('keydown', (e) => {
 (function initAuth() {
   const saved = sessionStorage.getItem('cpmi_user');
   if (saved) {
-    currentUser = JSON.parse(saved);
+    const data = JSON.parse(saved);
+    // Sesi lama (dibuat sebelum ada fitur peran/cabang) tidak menyimpan 'role',
+    // akibatnya pembatasan peran tidak berjalan. Sesi seperti itu dianggap
+    // kedaluwarsa supaya pengguna login ulang dan datanya lengkap.
+    if (!('role' in data) || !('cabangScope' in data)) {
+      sessionStorage.removeItem('cpmi_user');
+      showLogin('Silakan login ulang (ada pembaruan sistem).');
+      return;
+    }
+    currentUser = data;
     showApp();
   } else {
     showLogin('');
