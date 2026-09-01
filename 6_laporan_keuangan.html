@@ -111,6 +111,11 @@
   .app-header .subtitle { font-size: 10.5px; color: var(--blue-700); }
   .app-header .logout { margin-left: auto; background: none; border: none; font-size: 11px; color: var(--muted); cursor: pointer; text-decoration: underline; }
 
+  .label-bulan {
+    text-align: center; font-size: 12px; font-weight: 700; color: var(--navy-800);
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 8px 12px 2px; background: var(--blue-50);
+  }
   .saldo-bar {
     display: flex; gap: 8px; padding: 10px 12px; background: #fff; border-bottom: 1px solid var(--border);
   }
@@ -318,6 +323,8 @@
     <button class="logout" id="logoutBtn" style="margin-left:10px;">Keluar</button>
   </div>
 
+  <div id="labelBulan" class="label-bulan">Bulan ini</div>
+
   <div class="saldo-bar">
     <div class="saldo-card saldo-masuk">
       <div class="lbl">Masuk</div>
@@ -519,8 +526,21 @@ async function refreshCpmiList() {
   try {
     const url = API_URL + '?username=' + encodeURIComponent(currentUser.username) + '&password=' + encodeURIComponent(currentUser.password);
     const res = await fetch(url);
-    records = await res.json();
-  } catch (e) { /* diamkan, pencarian tetap pakai data lama */ }
+    const hasil = await res.json();
+    records = Array.isArray(hasil) ? hasil : [];
+
+    // Daftar CPMI kosong biasanya bukan karena aplikasi rusak, tapi karena hak akses
+    // akun belum diatur (kolom "cabangScope" di daftar akun masih kosong).
+    // Dulu ini didiamkan, jadi terlihat seperti aplikasinya tidak berfungsi.
+    if (records.length === 0) {
+      document.getElementById('statusMsg').textContent =
+        'Daftar CPMI kosong. Cek kolom "cabangScope" akun Anda di daftar akun (isi nama cabang, atau SEMUA untuk lihat semua).';
+    }
+  } catch (e) {
+    records = [];
+    document.getElementById('statusMsg').textContent =
+      'Gagal memuat daftar CPMI. Cek koneksi internet, lalu buka ulang aplikasi.';
+  }
 }
 
 async function refreshFinanceList() {
@@ -534,28 +554,52 @@ async function refreshFinanceList() {
 async function refreshAll() {
   document.getElementById('statusMsg').textContent = 'Memuat data...';
   await Promise.all([refreshCpmiList(), refreshFinanceList()]);
-  document.getElementById('statusMsg').textContent = 'Data terhubung ke Google Sheets.';
+  if (records.length > 0) {
+    document.getElementById('statusMsg').textContent = 'Data terhubung ke Google Sheets.';
+  }
   renderSaldo();
   renderFeed();
 }
 
+// Bulan yang sedang ditampilkan, format 'YYYY-MM'. Selalu bulan berjalan.
+function bulanBerjalan() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+// Transaksi bulan ini saja. Bulan-bulan sebelumnya TETAP TERSIMPAN di Google Sheets
+// dan tetap ikut di laporan Excel -- hanya tidak ditampilkan di layar, supaya
+// tampilan tidak bercampur antar bulan dan tidak membingungkan.
+function transaksiBulanIni() {
+  const bln = bulanBerjalan();
+  return financeRecords.filter(r => String(r.tanggal || '').slice(0, 7) === bln);
+}
+
 function renderSaldo() {
   let masuk = 0, keluar = 0;
-  financeRecords.forEach(r => {
+  transaksiBulanIni().forEach(r => {
     masuk += Number(r.debet) || 0;
     keluar += Number(r.kredit) || 0;
   });
   document.getElementById('totalMasuk').textContent = fmtRupiah(masuk);
   document.getElementById('totalKeluar').textContent = fmtRupiah(keluar);
   document.getElementById('totalSisa').textContent = fmtRupiah(masuk - keluar);
+
+  // Beri keterangan bulan yang sedang ditampilkan
+  const label = document.getElementById('labelBulan');
+  if (label) {
+    const bulanNama = ['Januari','Februari','Maret','April','Mei','Juni',
+                       'Juli','Agustus','September','Oktober','November','Desember'];
+    const d = new Date();
+    label.textContent = 'Bulan ' + bulanNama[d.getMonth()] + ' ' + d.getFullYear();
+  }
 }
 
 function renderFeed() {
   const feed = document.getElementById('feed');
   // entri "jejak" (nominal 0, untuk cek dobel-input kategori gratis) tidak perlu tampil di feed
-  const tampil = financeRecords.filter(r => (Number(r.debet) || 0) > 0 || (Number(r.kredit) || 0) > 0);
+  const tampil = transaksiBulanIni().filter(r => (Number(r.debet) || 0) > 0 || (Number(r.kredit) || 0) > 0);
   if (!tampil.length) {
-    feed.innerHTML = '<div class="feed-empty">Belum ada transaksi. Catat pengeluaran/pemasukan pertama lewat form di bawah.</div>';
+    feed.innerHTML = '<div class="feed-empty">Belum ada transaksi bulan ini. Catat pengeluaran/pemasukan pertama lewat form di bawah.<br/><span style="font-size:11px; opacity:.75;">Transaksi bulan sebelumnya tetap tersimpan dan bisa dilihat lewat menu Laporan 📑</span></div>';
     return;
   }
   // urut terbaru dulu untuk ditampilkan (tanggal lalu id)
