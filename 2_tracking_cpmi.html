@@ -1534,6 +1534,9 @@ function isTerbangOverdue(r) {
 // Pengingat: status sudah Selesai selama 1+ hari, tapi dokumen belum dikirim ke Hong Kong
 function isKirimDokumenOverdue(r) {
   if (sudahMundur(r)) return false;
+  // Kalau sudah ada tanggal EC, berarti dokumen pasti sudah dikirim ke Hong Kong
+  // (EC terbit setelah dokumen masuk). Jadi tidak perlu diingatkan lagi.
+  if (String(r.ec || '').trim()) return false;
   const d = daysSince(r.selesaiDate);
   return r.status === 'selesai' && !r.kirimdokumen && d !== null && d >= 1;
 }
