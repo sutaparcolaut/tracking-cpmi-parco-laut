@@ -1531,6 +1531,20 @@ function isTerbangOverdue(r) {
   return r.opp && !r.terbang && d !== null && d >= 7;
 }
 
+// Pengingat: status sudah Selesai selama 1+ hari, tapi dokumen belum dikirim ke Hong Kong
+function isKirimDokumenOverdue(r) {
+  if (sudahMundur(r)) return false;
+  const d = daysSince(r.selesaiDate);
+  return r.status === 'selesai' && !r.kirimdokumen && d !== null && d >= 1;
+}
+
+// Pengingat: majikan sudah TTD selama 1+ hari, tapi MCU belum dilakukan
+function isMcuSetelahTtdOverdue(r) {
+  if (sudahMundur(r)) return false;
+  const d = daysSince(r.ttdmajikan);
+  return r.ttdmajikan && !r.mcu && d !== null && d >= 1;
+}
+
 // Pengingat 6: Sales sudah ditentukan (berarti majikan sudah ada), tapi majikan
 // belum tanda tangan. Perlu dikejar untuk kepastian dan pembayaran.
 function isBelumTtd(r) {
@@ -1616,9 +1630,11 @@ function renderReminders() {
   const ecList = records.filter(isEcOverdue);
   const oppList = records.filter(isOppOverdue);
   const terbangList = records.filter(isTerbangOverdue);
+  const kirimDokList = records.filter(isKirimDokumenOverdue);
+  const mcuTtdList = records.filter(isMcuSetelahTtdOverdue);
   const gandaList = cariNoregGanda();
   const box = document.getElementById('reminderBox');
-  if (mcuList.length === 0 && ecList.length === 0 && oppList.length === 0 && terbangList.length === 0 && gandaList.length === 0) {
+  if (mcuList.length === 0 && ecList.length === 0 && oppList.length === 0 && terbangList.length === 0 && kirimDokList.length === 0 && mcuTtdList.length === 0 && gandaList.length === 0) {
     box.innerHTML = '';
     return;
   }
@@ -1640,6 +1656,18 @@ function renderReminders() {
   if (ecList.length > 0) {
     html += `<div class="reminder-box"><h4>⚠ Sudah 7+ hari status Selesai, belum masuk EC (${ecList.length})</h4><ul>` +
       ecList.map(r => `<li>${r.nama} — Selesai ${daysSince(r.selesaiDate)} hari lalu</li>`).join('') +
+      `</ul></div>`;
+  }
+  if (kirimDokList.length > 0) {
+    html += `<div class="reminder-box"><h4>⚠ Sudah Selesai 1+ hari, dokumen belum dikirim ke Hong Kong (${kirimDokList.length})</h4><ul>` +
+      kirimDokList.slice(0, 30).map(r => `<li>${r.nama} — Selesai ${daysSince(r.selesaiDate)} hari lalu</li>`).join('') +
+      (kirimDokList.length > 30 ? `<li>...dan ${kirimDokList.length - 30} lainnya</li>` : '') +
+      `</ul></div>`;
+  }
+  if (mcuTtdList.length > 0) {
+    html += `<div class="reminder-box"><h4>⚠ Majikan sudah TTD 1+ hari, MCU belum dilakukan (${mcuTtdList.length})</h4><ul>` +
+      mcuTtdList.slice(0, 30).map(r => `<li>${r.nama} — TTD ${daysSince(r.ttdmajikan)} hari lalu</li>`).join('') +
+      (mcuTtdList.length > 30 ? `<li>...dan ${mcuTtdList.length - 30} lainnya</li>` : '') +
       `</ul></div>`;
   }
   if (terbangList.length > 0) {
@@ -1714,17 +1742,94 @@ async function loadData() {
   render();
 }
 
-async function sendAction(action, record) {
-  document.getElementById('statusMsg').textContent = 'Menyimpan...';
+// Mengirim perubahan ke server DAN memeriksa jawabannya.
+// Dulu jawabannya tidak diperiksa, sehingga kalau server menolak (misalnya hak akses
+// belum diatur), aplikasi tetap menulis "Tersimpan" padahal datanya tidak masuk.
+// Mengirim satu kali, lalu memeriksa jawaban server.
+// Mengembalikan objek: { ok, permanen, alasan, record }.
+//   permanen = true berarti ditolak aturan (percuma diulang, mis. hak akses).
+async function kirimSekali(action, record) {
   try {
-    await fetch(API_URL, {
+    const res = await fetchBatasWaktu(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action, record, username: currentUser.username, password: currentUser.password })
-    });
-    document.getElementById('statusMsg').textContent = 'Tersimpan ke Google Sheets.';
+    }, 30);
+    let jawab = null;
+    try { jawab = await res.json(); } catch (e) { jawab = null; }
+
+    if (!jawab) return { ok: false, permanen: false, alasan: 'Jawaban server tidak terbaca.' };
+
+    if (jawab.success === false) {
+      const permanenErr = ['no_scope','forbidden','forbidden_role','unauthorized','not_found'];
+      const alasan = {
+        no_scope: 'Akun Anda belum diatur cabangnya. Hubungi administrator untuk mengisi kolom "cabangScope".',
+        forbidden: 'Tidak boleh mengubah data cabang lain.',
+        forbidden_role: 'Peran akun Anda tidak berwenang menambah atau menghapus CPMI.',
+        unauthorized: 'Sesi tidak valid. Silakan login ulang.',
+        not_found: 'Data yang diedit tidak ditemukan di server. Coba tekan Refresh dulu.',
+        not_saved: 'Data gagal tertulis ke Google Sheets.'
+      }[jawab.error] || ('Ditolak server (' + (jawab.error || 'tidak diketahui') + ').');
+      return { ok: false, permanen: permanenErr.includes(jawab.error), alasan };
+    }
+    return { ok: true, record: jawab.record || null };
   } catch (e) {
-    document.getElementById('statusMsg').textContent = 'Gagal menyimpan. Coba lagi.';
+    const pesan = (e && e.name === 'AbortError')
+      ? 'Server tidak menjawab (lebih dari 30 detik).'
+      : 'Gagal terhubung ke server.';
+    return { ok: false, permanen: false, alasan: pesan };
   }
+}
+
+// Membandingkan data yang DIKIRIM dengan data yang DISIMPAN server, kolom demi kolom.
+// Kalau ada yang tidak cocok, berarti tersimpan tapi tidak utuh -> dianggap gagal.
+function cocokTersimpan(dikirim, disimpan) {
+  if (!disimpan) return false;
+  const kunci = Object.keys(dikirim).filter(k => k !== 'selesaiDate');
+  for (const k of kunci) {
+    const a = String(dikirim[k] == null ? '' : dikirim[k]).trim();
+    const b = String(disimpan[k] == null ? '' : disimpan[k]).trim();
+    if (a !== b) return false;
+  }
+  return true;
+}
+
+async function sendAction(action, record) {
+  const pesanEl = document.getElementById('statusMsg');
+  const MAKS_COBA = 3;
+
+  for (let percobaan = 1; percobaan <= MAKS_COBA; percobaan++) {
+    pesanEl.textContent = percobaan === 1 ? 'Menyimpan...' : ('Mencoba lagi (' + percobaan + '/' + MAKS_COBA + ')...');
+    const hasil = await kirimSekali(action, record);
+
+    if (hasil.ok) {
+      // VERIFIKASI: pastikan data di server benar-benar sama dengan yang dikirim
+      if (action === 'delete' || cocokTersimpan(record, hasil.record)) {
+        pesanEl.textContent = '✓ Tersimpan & terverifikasi di Google Sheets.';
+        return true;
+      }
+      // tersimpan tapi tidak utuh -> ulangi
+      if (percobaan < MAKS_COBA) { await new Promise(r => setTimeout(r, 900)); continue; }
+      pesanEl.textContent = '⚠ Data mungkin tidak lengkap tersimpan.';
+      alert('PERHATIAN: data tersimpan TAPI tidak lengkap.\n\n' +
+            'Silakan tekan Refresh dan periksa data ini. Kalau masih kurang, input ulang.');
+      return false;
+    }
+
+    // ditolak aturan -> percuma diulang
+    if (hasil.permanen) {
+      pesanEl.textContent = 'GAGAL: ' + hasil.alasan;
+      alert('Data TIDAK tersimpan.\n\n' + hasil.alasan);
+      return false;
+    }
+
+    // gangguan sementara (koneksi/timeout) -> coba lagi
+    if (percobaan < MAKS_COBA) { await new Promise(r => setTimeout(r, 1200)); continue; }
+    pesanEl.textContent = 'GAGAL setelah ' + MAKS_COBA + ' percobaan.';
+    alert('Data TIDAK tersimpan setelah ' + MAKS_COBA + ' kali percobaan.\n\n' +
+          hasil.alasan + '\n\nData Anda masih ada di form — jangan tutup, coba Simpan lagi.');
+    return false;
+  }
+  return false;
 }
 
 function renderDashboard() {
@@ -1735,7 +1840,7 @@ function renderDashboard() {
   // Proses sudah selesai tapi majikan belum tanda tangan -> perlu dikejar soal pembayaran
   const belumTtd = records.filter(isBelumTtd).length;
   const batal = records.filter(r => r.status === 'batal').length;
-  const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isNoregGanda(r)).length;
+  const pengingat = records.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isKirimDokumenOverdue(r) || isMcuSetelahTtdOverdue(r) || isNoregGanda(r)).length;
   const penempatan = records.filter(r => !!r.terbang).length;
 
   document.getElementById('statTotal').textContent = total;
@@ -1779,7 +1884,7 @@ function render() {
   else if (statusFilter === 'belumttd') filtered = filtered.filter(isBelumTtd);
   else if (statusFilter === 'selesai') filtered = filtered.filter(r => r.status === 'selesai');
   else if (statusFilter === 'batal') filtered = filtered.filter(r => r.status === 'batal');
-  else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isNoregGanda(r));
+  else if (statusFilter === 'alert') filtered = filtered.filter(r => isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isKirimDokumenOverdue(r) || isMcuSetelahTtdOverdue(r) || isNoregGanda(r));
   else if (statusFilter === 'penempatan') filtered = filtered.filter(r => !!r.terbang);
   lastFiltered = filtered;
   const body = document.getElementById('tableBody');
@@ -1795,7 +1900,7 @@ function render() {
     body.innerHTML = '<tr><td colspan="25" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data CPMI.</td></tr>';
   } else {
     body.innerHTML = pageItems.map((r, i) => {
-      const alert = isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isNoregGanda(r);
+      const alert = isMcuOverdue(r) || isEcOverdue(r) || isOppOverdue(r) || isTerbangOverdue(r) || isKirimDokumenOverdue(r) || isMcuSetelahTtdOverdue(r) || isNoregGanda(r);
       return `
       <tr class="${alert ? 'row-alert' : ''}">
         <td>${startIdx + i + 1}</td>
@@ -1894,22 +1999,34 @@ const FIELD_PENEMPATAN = ['f_ec','f_noec','f_opp','f_nopaspor','f_novisa','f_nam
 function terapkanFormPeran() {
   const modal = document.getElementById('modal');
   if (!modal) return;
-  const isPenempatan = String(currentUser && currentUser.role || '').toLowerCase() === 'penempatan';
 
-  // Semua isian di dalam form, beserta label yang menempel tepat sebelumnya.
+  const role = String(currentUser && currentUser.role || '').toLowerCase();
+  const cab = String(currentUser && currentUser.cabangScope || '').trim().toUpperCase();
+  const isPenempatan = role === 'penempatan';
+  const isAdmin = ['SEMUA', '*', 'ALL'].includes(cab);
+
+  // Pembagian tugas di form Edit:
+  //   Staf Penempatan -> HANYA kolom tahap penempatan
+  //   Staf Cabang/Pusat -> semua kolom KECUALI tahap penempatan (itu tugas Staf Penempatan)
+  //   Administrator -> semua kolom
   const semuaIsian = Array.from(modal.querySelectorAll('input, select, textarea'));
 
   semuaIsian.forEach(isian => {
     const label = isian.previousElementSibling && isian.previousElementSibling.tagName === 'LABEL'
       ? isian.previousElementSibling : null;
-    const sembunyi = isPenempatan && !FIELD_PENEMPATAN.includes(isian.id);
+    const milikPenempatan = FIELD_PENEMPATAN.includes(isian.id);
+
+    let sembunyi = false;
+    if (isPenempatan) sembunyi = !milikPenempatan;
+    else if (!isAdmin) sembunyi = milikPenempatan;
+
     isian.style.display = sembunyi ? 'none' : '';
     if (label) label.style.display = sembunyi ? 'none' : '';
   });
 
   // Judul form disesuaikan supaya jelas maksudnya
   const judul = document.getElementById('modalTitle');
-  if (isPenempatan && judul) judul.textContent = 'Lengkapi Data Penempatan';
+  if (judul && isPenempatan) judul.textContent = 'Lengkapi Data Penempatan';
 }
 
 function openModal(record) {
@@ -2829,7 +2946,8 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     ec: getDateField('f_ec'),
     selesaiDate
   };
-  await sendAction(editingId ? 'update' : 'add', data);
+  const berhasil = await sendAction(editingId ? 'update' : 'add', data);
+  if (!berhasil) return;   // form dibiarkan terbuka supaya isian tidak hilang
   closeModal();
   await loadData();
 
